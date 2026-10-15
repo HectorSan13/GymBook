@@ -2,9 +2,28 @@ import 'package:flutter/material.dart';
 import 'login_screen.dart';
 import 'register_screen.dart';
 
-class WelcomeScreen extends StatelessWidget {
+class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
 
+  @override
+  State<WelcomeScreen> createState() => _WelcomeScreenState();
+}
+
+class _WelcomeScreenState extends State<WelcomeScreen> {
+  void _mostrarAlertaSnackbar(String accion) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        duration: const Duration(seconds: 3),
+        content: Text('Funcionalidad de "$accion" pendiente.'),
+        action: SnackBarAction(
+          label: 'Cerrar',
+          onPressed: () {
+            // Código al cerrar
+          },
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -85,8 +104,8 @@ class WelcomeScreen extends StatelessWidget {
                   Navigator.of(context).push(MaterialPageRoute(builder: (context) => const RegisterScreen()));
                 },
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.black,
-                  side: const BorderSide(color: Colors.black, width: 1.5),
+                  backgroundColor: Colors.grey,
+                  foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
