@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:gymbook/screens/routines_screen.dart';
 import 'exercises_screen.dart';
 
 class LoginScreen extends StatelessWidget {
@@ -79,7 +80,7 @@ class LoginScreen extends StatelessWidget {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
-                    Navigator.of(context).push(MaterialPageRoute(builder: (context) => const ExercisesScreen()));
+                    Navigator.of(context).push(MaterialPageRoute(builder: (context) => RoutinesScreen()));
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.black,
