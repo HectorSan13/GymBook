@@ -10,20 +10,7 @@ class WelcomeScreen extends StatefulWidget {
 }
 
 class _WelcomeScreenState extends State<WelcomeScreen> {
-  void _mostrarAlertaSnackbar(String accion) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        duration: const Duration(seconds: 3),
-        content: Text('Funcionalidad de "$accion" pendiente.'),
-        action: SnackBarAction(
-          label: 'Cerrar',
-          onPressed: () {
-            // Código al cerrar
-          },
-        ),
-      ),
-    );
-  }
+  
 
   @override
   Widget build(BuildContext context) {
@@ -104,8 +91,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                   Navigator.of(context).push(MaterialPageRoute(builder: (context) => const RegisterScreen()));
                 },
                 style: OutlinedButton.styleFrom(
-                  backgroundColor: Colors.grey,
-                  foregroundColor: Colors.white,
+                  backgroundColor: Colors.white,
+                  foregroundColor: Colors.black,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
