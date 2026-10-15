@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import 'screens/welcome_screen.dart';
 
 void main() {
@@ -11,14 +10,12 @@ class GymBookApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return const MaterialApp(
       title: 'GymBook',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true,
-        scaffoldBackgroundColor: Colors.white,
-      ),
-      home: const WelcomeScreen(),
+      home: WelcomeScreen(), // Muestra nuestra pantalla de bienvenida al abrir
     );
   }
 }
+
+

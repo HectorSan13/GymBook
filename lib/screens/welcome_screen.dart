@@ -1,26 +1,10 @@
 import 'package:flutter/material.dart';
+import 'login_screen.dart';
+import 'register_screen.dart';
 
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
 
-  // Función para mostrar alerta de funcionalidad pendiente (requerimiento de la rúbrica)
-  void _mostrarAlertaPendiente(BuildContext context, String accion) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(accion),
-        content: Text(
-          'Al presionar este botón se ejecutará "$accion". Funcionalidad pendiente.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Aceptar'),
-          ),
-        ],
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -28,19 +12,19 @@ class WelcomeScreen extends StatelessWidget {
       backgroundColor: Colors.white,
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 28.0),
+          padding: const EdgeInsets.symmetric(horizontal: 24.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Spacer(),
 
-              // Círculo con el logo
+               const Spacer(),
+              
               Center(
                 child: Container(
                   width: 120,
                   height: 120,
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     color: Colors.black,
                     shape: BoxShape.circle,
                   ),
@@ -49,16 +33,17 @@ class WelcomeScreen extends StatelessWidget {
                     'GB',
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 40,
+                      fontSize: 48,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
               ),
 
+              
               const SizedBox(height: 24),
 
-              // Título de la App
+              
               const Text(
                 'GymBook',
                 textAlign: TextAlign.center,
@@ -69,33 +54,36 @@ class WelcomeScreen extends StatelessWidget {
                 ),
               ),
 
-              const Spacer(),
-
-              // Botón "Iniciar sesión"
+              
+              const SizedBox(height: 70),
+              
               ElevatedButton(
-                onPressed: () =>
-                    _mostrarAlertaPendiente(context, 'Iniciar sesión'),
+                onPressed: () {
+                  Navigator.of(context).push(MaterialPageRoute(builder: (context) => const LoginScreen()));
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.black,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
-                  elevation: 0,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                   ),
                 ),
                 child: const Text(
                   'Iniciar sesión',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
 
               const SizedBox(height: 12),
 
-              // Botón "Crear cuenta"
-              OutlinedButton(
-                onPressed: () =>
-                    _mostrarAlertaPendiente(context, 'Crear cuenta'),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).push(MaterialPageRoute(builder: (context) => const RegisterScreen()));
+                },
                 style: OutlinedButton.styleFrom(
                   foregroundColor: Colors.black,
                   side: const BorderSide(color: Colors.black, width: 1.5),
@@ -106,11 +94,14 @@ class WelcomeScreen extends StatelessWidget {
                 ),
                 child: const Text(
                   'Crear cuenta',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
 
-              const SizedBox(height: 40),
+              const SizedBox(height: 250),
             ],
           ),
         ),
