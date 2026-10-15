@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:gymbook/screens/exercises_screen.dart';
 
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
@@ -103,7 +104,14 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
               const SizedBox(height: 32),
 
               ElevatedButton(///////////////////////Boton de iniciar sesion
-                onPressed: () => _mostrarAlertaSnackbar('Iniciar sesión'),
+                //onPressed: () => _mostrarAlertaSnackbar('Iniciar sesión'),
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => ExercisesScreen()
+                    ),
+                  );
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.black,
                   foregroundColor: Colors.white,
