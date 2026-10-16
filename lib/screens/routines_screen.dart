@@ -20,6 +20,7 @@ class _RoutinesScreenState extends State<RoutinesScreen> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
+        centerTitle: true,
         iconTheme: const IconThemeData(color: Colors.black),
         title: const Text(
           'Mis rutinas',
@@ -157,7 +158,7 @@ class _RoutinesScreenState extends State<RoutinesScreen> {
         destinations: const [
           NavigationDestination(
             icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
+            selectedIcon: Icon(Icons.fitness_center),
             label: 'Rutinas',
           ),
           NavigationDestination(

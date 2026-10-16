@@ -29,14 +29,18 @@ class _ExercisesScreenState extends State<ExercisesScreen> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
+        leadingWidth: 90,
         leading: TextButton(
           onPressed: () => Navigator.of(context).pop(),
+          style: TextButton.styleFrom(
+            padding: EdgeInsets.zero,
+          ),
           child: const Text(
-            'Cancelar',
-            style: TextStyle(color: Colors.grey, fontSize: 16),
+            'Regresar',
+            style: TextStyle(color: Colors.black, fontSize: 16),
           ),
         ),
-        leadingWidth: 80,
+        //
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
