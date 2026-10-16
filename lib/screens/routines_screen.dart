@@ -16,8 +16,15 @@ class _RoutinesScreenState extends State<RoutinesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('Mis rutinas'),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.black),
+        title: const Text(
+          'Mis rutinas',
+          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+        ),
         leading: IconButton(
           icon: const Icon(Icons.person),
           onPressed: () {
@@ -34,11 +41,10 @@ class _RoutinesScreenState extends State<RoutinesScreen> {
           IconButton(
             icon: const Icon(Icons.settings),
             onPressed: () {
-
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) =>  SettingsScreen(),
+                  builder: (context) => const SettingsScreen(),
                 ),
               );
             },
@@ -53,8 +59,8 @@ class _RoutinesScreenState extends State<RoutinesScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text(
-                'Jair Aguilar',
-                style: TextStyle(fontSize: 20, color: Colors.grey),
+                'Jair Ernesto Aguilar Limón',
+                style: TextStyle(fontSize: 20, color: Colors.grey, fontWeight: FontWeight.w500),
               ),
 
               // GRÁFICA
@@ -95,11 +101,10 @@ class _RoutinesScreenState extends State<RoutinesScreen> {
             padding: EdgeInsets.all(30),
           ),
 
-          // Botón gigante del medio (
+          // Botón gigante del medio
           Center(
             child: ElevatedButton(
               onPressed: () {
-                // AQUÍ MANDA LLAMAR A LA PANTALLA ejercicios
                 Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -107,22 +112,32 @@ class _RoutinesScreenState extends State<RoutinesScreen> {
                   ),
                 );
               },
-              child: const Padding(
-                padding: EdgeInsets.all(20.0),
-                child: Icon(Icons.add, size: 50),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.black,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.all(20.0),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
               ),
+              child: const Icon(Icons.add, size: 50),
             ),
           ),
 
           const Center(
             child: Padding(
               padding: EdgeInsets.all(15.0),
-              child: Text('Toca + para crear tu primera rutina.'),
+              child: Text(
+                'Toca + para crear tu primera rutina.',
+                style: TextStyle(color: Colors.black, fontWeight: FontWeight.w500),
+              ),
             ),
           ),
         ],
       ),
       bottomNavigationBar: NavigationBar(
+        backgroundColor: Colors.white,
+        indicatorColor: Colors.grey.shade200,
         selectedIndex: currentPageIndex,
         onDestinationSelected: (int index) {
           if (index == 0) {
@@ -141,11 +156,12 @@ class _RoutinesScreenState extends State<RoutinesScreen> {
         },
         destinations: const [
           NavigationDestination(
-            icon: Icon(Icons.home),
+            icon: Icon(Icons.home_outlined),
+            selectedIcon: Icon(Icons.home),
             label: 'Rutinas',
           ),
           NavigationDestination(
-            icon: Icon(Icons.list),
+            icon: Icon(Icons.list_alt),
             label: 'Ejercicios',
           ),
           NavigationDestination(
