@@ -24,35 +24,35 @@ class _ExercisesScreenState extends State<ExercisesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Variable para saber si estamos en modo oscuro o claro y ajustar los colores puros
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: isDarkMode ? Colors.black : Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: isDarkMode ? Colors.black : Colors.white,
         elevation: 0,
-        leadingWidth: 90,
         leading: TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          style: TextButton.styleFrom(
-            padding: EdgeInsets.zero,
-          ),
           child: const Text(
-            'Regresar',
-            style: TextStyle(color: Colors.black, fontSize: 16),
+            'Cancelar',
+            style: TextStyle(color: Colors.grey, fontSize: 16),
           ),
         ),
-        //
+        leadingWidth: 100,
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
             child: Text(
               'Ejercicios',
               style: TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.bold,
-                color: Colors.black,
+                // Texto negro puro en modo claro blanco en oscuro
+                color: isDarkMode ? Colors.white : Colors.black,
               ),
             ),
           ),
@@ -71,12 +71,12 @@ class _ExercisesScreenState extends State<ExercisesScreen> {
               },
             ),
           ),
-          
-          // Barra inferior de confirmación
+
+          // Barra inferior
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.05),
@@ -99,14 +99,15 @@ class _ExercisesScreenState extends State<ExercisesScreen> {
                   onPressed: _selectedExerciseIds.isEmpty
                       ? null
                       : () {
-                          Navigator.of(context).pop(_selectedExerciseIds);
-                        },
+                    Navigator.of(context).pop(_selectedExerciseIds);
+                  },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.black,
-                    foregroundColor: Colors.white,
+                    // Botón DINÁMICO
+                    backgroundColor: isDarkMode ? Colors.white : Colors.black,
+                    foregroundColor: isDarkMode ? Colors.black : Colors.white,
                     padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(16),
                     ),
                   ),
                   child: const Text('Listo', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),

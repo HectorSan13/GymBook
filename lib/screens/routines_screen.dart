@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
-import 'settings_screen.dart';
-import 'exercises_screen.dart';
+// CONEXIONES LIMPIAS:
+import 'package:gymbook/screens/settings_screen.dart';
+import 'package:gymbook/screens/exercises_screen.dart';
 
 class RoutinesScreen extends StatefulWidget {
   const RoutinesScreen({super.key});
@@ -16,15 +17,12 @@ class _RoutinesScreenState extends State<RoutinesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
-        iconTheme: const IconThemeData(color: Colors.black),
         title: const Text(
           'Mis rutinas',
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+          style: TextStyle(fontWeight: FontWeight.bold),
         ),
         leading: IconButton(
           icon: const Icon(Icons.person),
@@ -45,7 +43,7 @@ class _RoutinesScreenState extends State<RoutinesScreen> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const SettingsScreen(),
+                  builder: (context) => SettingsScreen(),
                 ),
               );
             },
@@ -114,8 +112,8 @@ class _RoutinesScreenState extends State<RoutinesScreen> {
                 );
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.black,
-                foregroundColor: Colors.white,
+                backgroundColor: Theme.of(context).brightness == Brightness.light ? Colors.black : Colors.white,
+                foregroundColor: Theme.of(context).brightness == Brightness.light ? Colors.white : Colors.black,
                 padding: const EdgeInsets.all(20.0),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
@@ -130,15 +128,14 @@ class _RoutinesScreenState extends State<RoutinesScreen> {
               padding: EdgeInsets.all(15.0),
               child: Text(
                 'Toca + para crear tu primera rutina.',
-                style: TextStyle(color: Colors.black, fontWeight: FontWeight.w500),
+                style: TextStyle(fontWeight: FontWeight.w500),
               ),
             ),
           ),
         ],
       ),
       bottomNavigationBar: NavigationBar(
-        backgroundColor: Colors.white,
-        indicatorColor: Colors.grey.shade200,
+        indicatorColor: Colors.grey.withOpacity(0.2),
         selectedIndex: currentPageIndex,
         onDestinationSelected: (int index) {
           if (index == 0) {

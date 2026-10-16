@@ -1,21 +1,42 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'screens/welcome_screen.dart';
 
+// Variable global para controlar el Modo Oscuro desde
+final ValueNotifier<ThemeMode> themeNotifier = ValueNotifier(ThemeMode.light);
+
 void main() {
-  runApp(const GymBookApp());
+  runApp(const MyApp());
 }
 
-class GymBookApp extends StatelessWidget {
-  const GymBookApp({super.key});
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-      title: 'GymBook',
-      debugShowCheckedModeBanner: false,
-      home: WelcomeScreen(), // Muestra nuestra pantalla de bienvenida al abrir
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: themeNotifier,
+      builder: (_, ThemeMode currentMode, __) {
+        return MaterialApp(
+          title: 'GymBook',
+          debugShowCheckedModeBanner: false,
+
+          // TEMA CLARO
+          theme: ThemeData(
+            brightness: Brightness.light,
+          ),
+
+          // TEMA OSCURO
+          darkTheme: ThemeData(
+            brightness: Brightness.dark,
+          ),
+
+          // Conectamos el modo de la app con la variable global
+          themeMode: currentMode,
+
+          home: const WelcomeScreen(),
+        );
+      },
     );
   }
 }
-
-

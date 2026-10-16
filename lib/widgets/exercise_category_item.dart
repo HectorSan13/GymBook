@@ -16,15 +16,19 @@ class ExerciseCategoryItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Variable para detectar el modo oscuro
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Theme(
       data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
       child: ExpansionTile(
         title: Text(
           category.title,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: Colors.black,
+            // Texto dinámico
+            color: isDarkMode ? Colors.white : Colors.black,
           ),
         ),
         initiallyExpanded: category.title == 'Pecho',
