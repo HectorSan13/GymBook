@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
-// CONEXIONES LIMPIAS:
 import 'package:gymbook/screens/settings_screen.dart';
 import 'package:gymbook/screens/exercises_screen.dart';
 
@@ -16,11 +15,10 @@ class _RoutinesScreenState extends State<RoutinesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
         centerTitle: true,
         title: const Text(
           'Mis rutinas',
@@ -45,7 +43,7 @@ class _RoutinesScreenState extends State<RoutinesScreen> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => SettingsScreen(),
+                  builder: (context) => const SettingsScreen(),
                 ),
               );
             },
@@ -59,9 +57,13 @@ class _RoutinesScreenState extends State<RoutinesScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 'Jair Ernesto Aguilar Limón',
-                style: TextStyle(fontSize: 20, color: Colors.black, fontWeight: FontWeight.w500),
+                style: TextStyle(
+                  fontSize: 20,
+                  color: isDarkMode ? Colors.white : Colors.black,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
 
               // GRÁFICA
@@ -79,16 +81,27 @@ class _RoutinesScreenState extends State<RoutinesScreen> {
                       maximumValue: 10000,
                       innerRadius: '75%',
                       cornerStyle: CornerStyle.bothCurve,
-                      trackColor: Colors.grey,
+                      trackColor: isDarkMode ? Colors.grey[800]! : Colors.grey[300]!,
                     )
                   ],
                   annotations: <CircularChartAnnotation>[
                     CircularChartAnnotation(
-                      widget: const Column(
+                      widget: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.directions_walk, size: 16),
-                          Text('6.5k', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                          Icon(
+                            Icons.directions_walk,
+                            size: 16,
+                            color: isDarkMode ? Colors.white : Colors.black,
+                          ),
+                          Text(
+                            '6.5k',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                              color: isDarkMode ? Colors.white : Colors.black,
+                            ),
+                          ),
                         ],
                       ),
                     )
@@ -114,8 +127,8 @@ class _RoutinesScreenState extends State<RoutinesScreen> {
                 );
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).brightness == Brightness.light ? Colors.black : Colors.white,
-                foregroundColor: Theme.of(context).brightness == Brightness.light ? Colors.white : Colors.black,
+                backgroundColor: isDarkMode ? Colors.white : Colors.black,
+                foregroundColor: isDarkMode ? Colors.black : Colors.white,
                 padding: const EdgeInsets.all(20.0),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
@@ -125,12 +138,15 @@ class _RoutinesScreenState extends State<RoutinesScreen> {
             ),
           ),
 
-          const Center(
+          Center(
             child: Padding(
-              padding: EdgeInsets.all(15.0),
+              padding: const EdgeInsets.all(15.0),
               child: Text(
                 'Toca + para crear tu primera rutina.',
-                style: TextStyle(fontWeight: FontWeight.w500),
+                style: TextStyle(
+                  fontWeight: FontWeight.w500,
+                  color: isDarkMode ? Colors.white70 : Colors.black87,
+                ),
               ),
             ),
           ),
@@ -138,20 +154,22 @@ class _RoutinesScreenState extends State<RoutinesScreen> {
       ),
       bottomNavigationBar: NavigationBarTheme(
         data: NavigationBarThemeData(
-          // Hace que el texto del label sea blanco (seleccionado y no seleccionado)
           labelTextStyle: WidgetStateProperty.all(
-            const TextStyle(color: Colors.white, fontSize: 12),
+            TextStyle(
+              color: isDarkMode ? Colors.black : Colors.white,
+              fontSize: 12,
+            ),
           ),
           iconTheme: WidgetStateProperty.resolveWith((states) {
             if (states.contains(WidgetState.selected)) {
-              return const IconThemeData(color: Colors.black); // Ícono negro sobre la píldora blanca
+              return IconThemeData(color: isDarkMode ? Colors.white : Colors.black);
             }
-            return const IconThemeData(color: Colors.white); // Ícono blanco sobre fondo negro
+            return IconThemeData(color: isDarkMode ? Colors.black : Colors.white);
           }),
         ),
         child: NavigationBar(
-          backgroundColor: Colors.black,
-          indicatorColor: Colors.white,
+          backgroundColor: isDarkMode ? Colors.white : Colors.black,
+          indicatorColor: isDarkMode ? Colors.black : Colors.white,
           selectedIndex: currentPageIndex,
           onDestinationSelected: (int index) {
             if (index == 0) {
@@ -184,7 +202,7 @@ class _RoutinesScreenState extends State<RoutinesScreen> {
             ),
           ],
         ),
-      )
+      ),
     );
   }
 }

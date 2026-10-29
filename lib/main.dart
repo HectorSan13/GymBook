@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
-import 'screens/welcome_screen.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+import 'package:gymbook/screens/routines_screen.dart';
 
-// Variable global para controlar el Modo Oscuro desde
+// Notificador global para controlar el tema en toda la app
 final ValueNotifier<ThemeMode> themeNotifier = ValueNotifier(ThemeMode.light);
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   runApp(const MyApp());
 }
 
@@ -17,23 +23,30 @@ class MyApp extends StatelessWidget {
       valueListenable: themeNotifier,
       builder: (_, ThemeMode currentMode, __) {
         return MaterialApp(
-          title: 'GymBook',
           debugShowCheckedModeBanner: false,
-
-          // TEMA CLARO
+          title: 'GymBook',
+          themeMode: currentMode,
+          // Tema Claro (Blanco Puro)
           theme: ThemeData(
             brightness: Brightness.light,
+            scaffoldBackgroundColor: Colors.white,
+            appBarTheme: const AppBarTheme(
+              backgroundColor: Colors.white,
+              foregroundColor: Colors.black,
+              elevation: 0,
+            ),
           ),
-
-          // TEMA OSCURO
+          // Tema Oscuro (Negro Puro)
           darkTheme: ThemeData(
             brightness: Brightness.dark,
+            scaffoldBackgroundColor: Colors.black,
+            appBarTheme: const AppBarTheme(
+              backgroundColor: Colors.black,
+              foregroundColor: Colors.white,
+              elevation: 0,
+            ),
           ),
-
-          // Conectamos el modo de la app con la variable global
-          themeMode: currentMode,
-
-          home: const WelcomeScreen(),
+          home: const RoutinesScreen(),
         );
       },
     );
