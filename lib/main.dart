@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'screens/welcome_screen.dart';
 
 // Variable global para controlar el Modo Oscuro desde
