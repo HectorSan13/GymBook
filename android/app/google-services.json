@@ -12,7 +12,28 @@
           "package_name": "com.example.gymbook"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "828629088778-5pavttrc4lob0gj70l97o85av4sckofr.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.gymbook",
+            "certificate_hash": "01cc84795bdc57bade09b628339a423e25dcabe4"
+          }
+        },
+        {
+          "client_id": "828629088778-es7ghvtkcf3mo6q0115rv59v5h9qs6rt.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.gymbook",
+            "certificate_hash": "076f8bcde7902ca4862d431702bbe147f5f923fd"
+          }
+        },
+        {
+          "client_id": "828629088778-tv0qrot35t34poe6g77iqfnlh6riu80r.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyD7v7SswXZL5f5kHuak-qcrOfiQ2kYE0dM"
@@ -20,7 +41,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "828629088778-tv0qrot35t34poe6g77iqfnlh6riu80r.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "828629088778-uq77547ddp06mgki5136s30beg4n50l4.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.gymbook"
+              }
+            }
+          ]
         }
       }
     }
