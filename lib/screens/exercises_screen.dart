@@ -24,7 +24,6 @@ class _ExercisesScreenState extends State<ExercisesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Variable para saber si estamos en modo oscuro o claro y ajustar los colores puros
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
@@ -51,7 +50,6 @@ class _ExercisesScreenState extends State<ExercisesScreen> {
               style: TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.bold,
-                // Texto negro puro en modo claro blanco en oscuro
                 color: isDarkMode ? Colors.white : Colors.black,
               ),
             ),

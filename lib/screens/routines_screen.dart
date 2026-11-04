@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 import 'package:gymbook/screens/settings_screen.dart';
 import 'package:gymbook/screens/exercises_screen.dart';
+import 'package:gymbook/widgets/routine_item.dart'; ///////
 
 class RoutinesScreen extends StatefulWidget {
   const RoutinesScreen({super.key});
@@ -12,6 +13,12 @@ class RoutinesScreen extends StatefulWidget {
 
 class _RoutinesScreenState extends State<RoutinesScreen> {
   int currentPageIndex = 0;
+
+  final List<String> misRutinas = [//Esta sera temporal dummy
+    'Día de Pecho y Tríceps',
+    'Día de Espalda y Bíceps',
+    'Día de Pierna (Cuádriceps)',
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -112,7 +119,7 @@ class _RoutinesScreenState extends State<RoutinesScreen> {
           ),
 
           const Padding(
-            padding: EdgeInsets.all(30),
+            padding: EdgeInsets.all(16),
           ),
 
           // Botón gigante del medio
@@ -142,7 +149,9 @@ class _RoutinesScreenState extends State<RoutinesScreen> {
             child: Padding(
               padding: const EdgeInsets.all(15.0),
               child: Text(
-                'Toca + para crear tu primera rutina.',
+                misRutinas.isEmpty
+                  ? 'Toca + para crear tu primera rutina.'
+                  : 'Tus rutinas guardadas:',
                 style: TextStyle(
                   fontWeight: FontWeight.w500,
                   color: isDarkMode ? Colors.white70 : Colors.black87,
@@ -150,6 +159,8 @@ class _RoutinesScreenState extends State<RoutinesScreen> {
               ),
             ),
           ),
+          const SizedBox(height: 10),
+          ...misRutinas.map((tituloRutina) => RoutineItem(title: tituloRutina)), ///////////////////////7
         ],
       ),
       bottomNavigationBar: NavigationBarTheme(
