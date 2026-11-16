@@ -12,7 +12,7 @@ class RoutineItem extends StatelessWidget {
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      elevation: 5,
+      elevation: 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       child: InkWell(
         borderRadius: BorderRadius.circular(15),
@@ -28,29 +28,23 @@ class RoutineItem extends StatelessWidget {
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(15),
-            gradient: LinearGradient(
-              colors: isDark 
-                  ? [const Color(0xFF0A192F), Colors.black87] 
-                  : [Colors.indigo.shade900, Colors.blue.shade700], 
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
+            color: isDark ? Colors.grey[900] : Colors.grey[100],
           ),
           child: Row(
             children: [
-              const Icon(Icons.fitness_center, color: Colors.white, size: 30),
+              Icon(Icons.fitness_center, color: isDark ? Colors.white : Colors.black, size: 30),
               const SizedBox(width: 15),
               Expanded(
                 child: Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: isDark ? Colors.white : Colors.black,
                   ),
                 ),
               ),
-              const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 20),
+              Icon(Icons.arrow_forward_ios, color: isDark ? Colors.white : Colors.black, size: 20),
             ],
           ),
         ),

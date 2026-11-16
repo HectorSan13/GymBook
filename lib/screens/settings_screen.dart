@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:gymbook/main.dart';
 import 'package:gymbook/screens/welcome_screen.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -65,6 +66,7 @@ class SettingsScreen extends StatelessWidget {
                     child: ElevatedButton(
                       onPressed: () async {
                         await FirebaseAuth.instance.signOut();
+                        await GoogleSignIn().signOut();
                         if (context.mounted) {
                           Navigator.of(context).pushAndRemoveUntil(
                             MaterialPageRoute(

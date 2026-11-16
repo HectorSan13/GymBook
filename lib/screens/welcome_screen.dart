@@ -10,12 +10,13 @@ class WelcomeScreen extends StatefulWidget {
 }
 
 class _WelcomeScreenState extends State<WelcomeScreen> {
-  
+
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: Colors.white,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -24,21 +25,21 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
 
-               const Spacer(),
-              
+              const Spacer(),
+
               Center(
                 child: Container(
                   width: 120,
                   height: 120,
                   decoration: BoxDecoration(
-                    color: Colors.black,
+                    color: isDarkMode ? Colors.white : Colors.black,
                     shape: BoxShape.circle,
                   ),
                   alignment: Alignment.center,
-                  child: const Text(
+                  child: Text(
                     'GB',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: isDarkMode ? Colors.black : Colors.white,
                       fontSize: 48,
                       fontWeight: FontWeight.bold,
                     ),
@@ -46,30 +47,30 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                 ),
               ),
 
-              
+
               const SizedBox(height: 24),
 
-              
-              const Text(
+
+              Text(
                 'GymBook',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black,
+                  color: isDarkMode ? Colors.white : Colors.black,
                 ),
               ),
 
-              
+
               const SizedBox(height: 70),
-              
+
               ElevatedButton(
                 onPressed: () {
                   Navigator.of(context).push(MaterialPageRoute(builder: (context) => const LoginScreen()));
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.black,
-                  foregroundColor: Colors.white,
+                  backgroundColor: isDarkMode ? Colors.white : Colors.black,
+                  foregroundColor: isDarkMode ? Colors.black : Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
@@ -91,8 +92,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                   Navigator.of(context).push(MaterialPageRoute(builder: (context) => const RegisterScreen()));
                 },
                 style: OutlinedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: Colors.black,
+                  backgroundColor: isDarkMode ? Colors.grey[900] : Colors.white,
+                  foregroundColor: isDarkMode ? Colors.white : Colors.black,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),

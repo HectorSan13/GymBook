@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
-import 'package:gymbook/screens/routines_screen.dart';
+import 'package:gymbook/screens/welcome_screen.dart';
 
 // Notificador global para controlar el tema en toda la app
 final ValueNotifier<ThemeMode> themeNotifier = ValueNotifier(ThemeMode.light);
@@ -26,7 +26,7 @@ class MyApp extends StatelessWidget {
           debugShowCheckedModeBanner: false,
           title: 'GymBook',
           themeMode: currentMode,
-          // Tema Claro (Blanco Puro)
+          // Tema Claro
           theme: ThemeData(
             brightness: Brightness.light,
             scaffoldBackgroundColor: Colors.white,
@@ -36,7 +36,7 @@ class MyApp extends StatelessWidget {
               elevation: 0,
             ),
           ),
-          // Tema Oscuro (Negro Puro)
+          // Tema Oscuro
           darkTheme: ThemeData(
             brightness: Brightness.dark,
             scaffoldBackgroundColor: Colors.black,
@@ -46,7 +46,7 @@ class MyApp extends StatelessWidget {
               elevation: 0,
             ),
           ),
-          home: const RoutinesScreen(),
+          home: const WelcomeScreen(),
         );
       },
     );
