@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 import 'package:gymbook/screens/settings_screen.dart';
 import 'package:gymbook/screens/exercises_screen.dart';
-import 'package:gymbook/widgets/routine_item.dart'; ///////
+import 'package:gymbook/widgets/routine_item.dart';
+import 'package:gymbook/screens/exercises_list_screen.dart';
 
 class RoutinesScreen extends StatefulWidget {
   const RoutinesScreen({super.key});
@@ -27,9 +28,10 @@ class _RoutinesScreenState extends State<RoutinesScreen> {
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
-        title: const Text(
-          'Mis rutinas',
-          style: TextStyle(fontWeight: FontWeight.bold),
+        // El titulo cambia segun la pestaña
+        title: Text(
+          currentPageIndex == 1 ? 'Ejercicios' : 'Mis rutinas',
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         leading: IconButton(
           icon: const Icon(Icons.person),
@@ -57,7 +59,10 @@ class _RoutinesScreenState extends State<RoutinesScreen> {
           ),
         ],
       ),
-      body: ListView(
+      // Si estamos en la pestaña Ejercicios mostramos el catalogo
+      body: currentPageIndex == 1
+          ? const ExercisesListScreen()
+          : ListView(
         padding: const EdgeInsets.all(20),
         children: [
           // FILA PRINCIPAL
@@ -150,8 +155,8 @@ class _RoutinesScreenState extends State<RoutinesScreen> {
               padding: const EdgeInsets.all(15.0),
               child: Text(
                 misRutinas.isEmpty
-                  ? 'Toca + para crear tu primera rutina.'
-                  : 'Tus rutinas guardadas:',
+                    ? 'Toca + para crear tu primera rutina.'
+                    : 'Tus rutinas guardadas:',
                 style: TextStyle(
                   fontWeight: FontWeight.w500,
                   color: isDarkMode ? Colors.white70 : Colors.black87,
@@ -183,7 +188,7 @@ class _RoutinesScreenState extends State<RoutinesScreen> {
           indicatorColor: isDarkMode ? Colors.black : Colors.white,
           selectedIndex: currentPageIndex,
           onDestinationSelected: (int index) {
-            if (index == 0) {
+            if (index == 0 || index == 1) {
               setState(() {
                 currentPageIndex = index;
               });
