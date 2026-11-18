@@ -1,13 +1,15 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:gymbook/models/routine.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 import 'package:gymbook/screens/settings_screen.dart';
-import 'package:gymbook/screens/exercises_screen.dart';
 import 'package:gymbook/widgets/routine_item.dart';
 import 'package:gymbook/screens/exercises_list_screen.dart';
 import 'package:gymbook/screens/profile_screen.dart';
 import 'package:gymbook/main.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:gymbook/data/dummy_data.dart';
+import 'package:gymbook/screens/create_routine_screen.dart';
 
 class RoutinesScreen extends StatefulWidget {
   const RoutinesScreen({super.key});
@@ -19,11 +21,45 @@ class RoutinesScreen extends StatefulWidget {
 class _RoutinesScreenState extends State<RoutinesScreen> {
   int currentPageIndex = 0;
 
-  final List<String> misRutinas = [//Esta sera temporal dummy
-    'Día de Pecho y Tríceps',
-    'Día de Espalda y Bíceps',
-    'Día de Pierna (Cuádriceps)',
+  final List<Routine> misRutinas = [//Rutinas que apareceran por defecto
+    Routine(
+      id: 'r1',
+      title: 'Día de Pecho y Tríceps',
+      exercises: [
+        ...temp_exercises[0].exercises.take(3),
+        ...temp_exercises[3].exercises.take(2),
+      ],
+    ),
+    Routine(
+      id: 'r2',
+      title: 'Día de Espalda y Bíceps',
+      exercises: [
+        ...temp_exercises[1].exercises.take(3),
+        ...temp_exercises[3].exercises.skip(1).take(2),
+      ],
+    ),
+    Routine(
+      id: 'r3',
+      title: 'Día de Pierna (Cuádriceps)',
+      exercises: temp_exercises[5].exercises.take(4).toList(),
+    ),
   ];
+
+  Future<void> _agregarRutina() async {
+    final nuevaRutina = await Navigator.push<Routine>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const CreateRoutineScreen(),
+      ),
+    );
+
+    //Cuando se de a guardar rutina, la agregamos y refrescamos la pantalla
+    if (nuevaRutina != null) {
+      setState(() {
+        misRutinas.add(nuevaRutina);
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +68,6 @@ class _RoutinesScreenState extends State<RoutinesScreen> {
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
-        // El titulo cambia segun la pestaña
         title: Text(
           currentPageIndex == 1 ? 'Ejercicios' : 'Mis rutinas',
           style: const TextStyle(fontWeight: FontWeight.bold),
@@ -145,14 +180,7 @@ class _RoutinesScreenState extends State<RoutinesScreen> {
           // Botón gigante del medio
           Center(
             child: ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const ExercisesScreen(),
-                  ),
-                );
-              },
+              onPressed: _agregarRutina,
               style: ElevatedButton.styleFrom(
                 backgroundColor: isDarkMode ? Colors.white : Colors.black,
                 foregroundColor: isDarkMode ? Colors.black : Colors.white,
@@ -180,7 +208,7 @@ class _RoutinesScreenState extends State<RoutinesScreen> {
             ),
           ),
           const SizedBox(height: 10),
-          ...misRutinas.map((tituloRutina) => RoutineItem(title: tituloRutina)), ///////////////////////7
+          ...misRutinas.map((rutina) => RoutineItem(routine: rutina)), ///////////////////////7
         ],
       ),
       bottomNavigationBar: NavigationBarTheme(

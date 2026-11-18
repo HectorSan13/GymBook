@@ -1,26 +1,18 @@
 import 'package:flutter/material.dart';
 import 'active_workout_screen.dart';
+import '../models/routine.dart';
 
 class RoutineDetailScreen extends StatelessWidget {
-  final String routineName;
-  const RoutineDetailScreen({super.key, required this.routineName});
+  final Routine routine;
+  const RoutineDetailScreen({super.key, required this.routine});
 
   @override
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
-    //Para mostrar como se miraria
-    final List<String> dummyExercises = [
-      'Press de banca plana',
-      'Press inclinado con mancuernas',
-      'Cristos en polea',
-      'Fondos en paralelas',
-      'Press militar sentado'
-    ];
-
     return Scaffold(
       appBar: AppBar(
-        title: Text(routineName),
+        title: Text(routine.title),
       ),
       body: SafeArea(
         child: Column(
@@ -36,17 +28,33 @@ class RoutineDetailScreen extends StatelessWidget {
             Expanded(
               child: ListView.builder(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: dummyExercises.length,
+                itemCount: routine.exercises.length,
                 itemBuilder: (context, index) {
+                  final ejercicio = routine.exercises[index];
                   return Card(
                     color: isDarkMode ? Colors.grey[900] : Colors.grey[100],
                     elevation: 0,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     child: ListTile(
-                      leading: Icon(Icons.fitness_center, color: isDarkMode ? Colors.white : Colors.black),
+                      leading: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.asset(
+                          'assets/images/exercises/${ejercicio.id}.jpg',
+                          width: 48,
+                          height: 48,
+                          fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) => Icon(
+                            Icons.fitness_center,
+                            color: isDarkMode ? Colors.white : Colors.black,
+                          ),
+                        ),
+                      ),
                       title: Text(
-                        dummyExercises[index],
-                        style: TextStyle(color: isDarkMode ? Colors.white : Colors.black, fontSize: 16),
+                        ejercicio.name,
+                        style: TextStyle(
+                          color: isDarkMode ? Colors.white : Colors.black,
+                          fontSize: 16,
+                        ),
                       ),
                     ),
                   );
@@ -69,7 +77,7 @@ class RoutineDetailScreen extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const ActiveWorkoutScreen(),
+                        builder: (context) => ActiveWorkoutScreen(routine: routine),
                       ),
                     );
                   },

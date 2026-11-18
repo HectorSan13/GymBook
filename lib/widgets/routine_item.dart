@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:gymbook/models/routine.dart';
 import 'package:gymbook/screens/routine_detail_screen.dart';
 
 class RoutineItem extends StatelessWidget {
-  final String title;
-
-  const RoutineItem({super.key, required this.title});
+  final Routine routine;
+  
+  const RoutineItem({super.key, required this.routine});
 
   @override
   Widget build(BuildContext context) {
@@ -20,7 +21,7 @@ class RoutineItem extends StatelessWidget {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => RoutineDetailScreen(routineName: title),
+              builder: (context) => RoutineDetailScreen(routine: routine),
             ),
           );
         },
@@ -35,13 +36,26 @@ class RoutineItem extends StatelessWidget {
               Icon(Icons.fitness_center, color: isDark ? Colors.white : Colors.black, size: 30),
               const SizedBox(width: 15),
               Expanded(
-                child: Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.white : Colors.black,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      routine.title,
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white : Colors.black,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${routine.exercises.length} ejercicios',
+                      style: TextStyle(
+                        color: isDark ? Colors.grey[400] : Colors.grey[600],
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
                 ),
               ),
               Icon(Icons.arrow_forward_ios, color: isDark ? Colors.white : Colors.black, size: 20),
