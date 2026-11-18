@@ -3,6 +3,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:gymbook/main.dart';
 import 'package:gymbook/screens/welcome_screen.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:gymbook/screens/profile_screen.dart';
+
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -25,6 +27,24 @@ class SettingsScreen extends StatelessWidget {
               child: ListView(
                 padding: const EdgeInsets.all(16.0),
                 children: [
+                  // Boton para ir a la pantalla de perfil
+                  ListTile(
+                    leading: const Icon(Icons.person),
+                    title: const Text(
+                      'Perfil',
+                      style: TextStyle(fontWeight: FontWeight.w500),
+                    ),
+                    trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ProfileScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 16),
                   Text(
                     'Preferencias',
                     style: TextStyle(
@@ -56,7 +76,7 @@ class SettingsScreen extends StatelessWidget {
               ),
             ),
 
-            // Botones inferiores
+            // Botones de hasta abajo
             Padding(
               padding: const EdgeInsets.all(20.0),
               child: Column(
@@ -72,7 +92,7 @@ class SettingsScreen extends StatelessWidget {
                             MaterialPageRoute(
                               builder: (context) => const WelcomeScreen(),
                             ),
-                            (route) => false,
+                                (route) => false,
                           );
                         }
                       },

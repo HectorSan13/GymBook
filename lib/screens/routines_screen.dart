@@ -1,9 +1,13 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 import 'package:gymbook/screens/settings_screen.dart';
 import 'package:gymbook/screens/exercises_screen.dart';
 import 'package:gymbook/widgets/routine_item.dart';
 import 'package:gymbook/screens/exercises_list_screen.dart';
+import 'package:gymbook/screens/profile_screen.dart';
+import 'package:gymbook/main.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class RoutinesScreen extends StatefulWidget {
   const RoutinesScreen({super.key});
@@ -33,15 +37,17 @@ class _RoutinesScreenState extends State<RoutinesScreen> {
           currentPageIndex == 1 ? 'Ejercicios' : 'Mis rutinas',
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
-        leading: IconButton(
-          icon: const Icon(Icons.person),
-          onPressed: () {
-            showDialog(
-              context: context,
-              builder: (context) => const AlertDialog(
-                title: Text('Pendiente'),
-                content: Text('Aquí se abrirá tu perfil.'),
-              ),
+        // Foto de perfil, si no hay foto sale el icono
+        leading: ValueListenableBuilder<String>(
+          valueListenable: photoNotifier,
+          builder: (context, photo, child) {
+            return IconButton(
+              icon: photo == ''
+                  ? const Icon(Icons.person)
+                  : CircleAvatar(radius: 16, backgroundImage: FileImage(File(photo))),
+              onPressed: () {
+                Navigator.push(context, MaterialPageRoute(builder: (context) => const ProfileScreen()));
+              },
             );
           },
         ),
@@ -69,13 +75,22 @@ class _RoutinesScreenState extends State<RoutinesScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'Jair Ernesto Aguilar Limón',
-                style: TextStyle(
-                  fontSize: 20,
-                  color: isDarkMode ? Colors.white : Colors.black,
-                  fontWeight: FontWeight.w500,
-                ),
+              // El nombre cambia cuando lo editan en Perfil
+              ValueListenableBuilder<String>(
+                valueListenable: nicknameNotifier,
+                builder: (context, nickname, child) {
+                  // Si no ha puesto apodo, sale el nombre con el que se registro
+                  final nombre = FirebaseAuth.instance.currentUser?.displayName ?? '';
+
+                  return Text(
+                    nickname == '' ? nombre : nickname,
+                    style: TextStyle(
+                      fontSize: 20,
+                      color: isDarkMode ? Colors.white : Colors.black,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  );
+                },
               ),
 
               // GRÁFICA

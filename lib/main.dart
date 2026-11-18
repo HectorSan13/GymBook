@@ -5,6 +5,10 @@ import 'package:gymbook/screens/welcome_screen.dart';
 
 // Notificador global para controlar el tema en toda la app
 final ValueNotifier<ThemeMode> themeNotifier = ValueNotifier(ThemeMode.light);
+// Datos del perfil de mientras lo pasamos a firebase
+final ValueNotifier<String> nicknameNotifier = ValueNotifier('');
+final ValueNotifier<String> photoNotifier = ValueNotifier('');
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
