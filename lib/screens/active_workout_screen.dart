@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/routine.dart';
+import '../services/active_workout_service.dart';
 
 class ActiveWorkoutScreen extends StatefulWidget {
   final Routine routine;
@@ -11,20 +12,15 @@ class ActiveWorkoutScreen extends StatefulWidget {
 }
 
 class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
-  int _currentExerciseIndex = 0;
-
   final TextEditingController _weightController = TextEditingController();
   final TextEditingController _repsController = TextEditingController();
 
-  //Guarda el peso anterior por ID de ejercicio, siendo que estos solo son valores de prueba
-  static final Map<String, String> _pesoAnterior = {
-    '0042': '60 kg x 10 reps',
-    '0028': '50 kg x 10 reps',
-    '0054': '80 kg x 8 reps',
-  };
-
-  //Guarda las series anotadas en esta sesión para cada ID de ejercicio
-  final Map<String, List<String>> _seriesDeHoy = {};
+  @override
+  void initState() {
+    super.initState();
+    // Inicia el entrenamiento en el servicio global si aún no está corriendo
+    ActiveWorkoutService.instance.startWorkout(widget.routine);
+  }
 
   @override
   void dispose() {
@@ -44,288 +40,498 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
       return;
     }
 
-    final ejercicioActual = widget.routine.exercises[_currentExerciseIndex];
+    final service = ActiveWorkoutService.instance;
+    final ejercicioActual = widget.routine.exercises[service.currentExerciseIndex];
     final registro = '$peso kg x $reps reps';
 
-    setState(() {
-      _seriesDeHoy.putIfAbsent(ejercicioActual.id, () => []);
-      _seriesDeHoy[ejercicioActual.id]!.add(registro);
-      _pesoAnterior[ejercicioActual.id] = registro;
-      _weightController.clear();
-      _repsController.clear();
-    });
+    service.addSet(ejercicioActual.id, registro);
 
+    _weightController.clear();
+    _repsController.clear();
     FocusScope.of(context).unfocus();
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Serie guardada: $registro')),
+    );
+  }
+
+  // Finalizar entrenamiento y registrar calorías + tiempo en Progreso
+  Future<void> _finalizarEntrenamiento() async {
+    final service = ActiveWorkoutService.instance;
+    final session = service.finishWorkout();
+
+    if (session == null) {
+      Navigator.pop(context);
+      return;
+    }
+
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
+    // Mostrar diálogo de felicitación y resumen
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: isDarkMode ? Colors.grey[900] : Colors.white,
+        title: Row(
+          children: [
+            const Icon(Icons.emoji_events, color: Colors.amber, size: 28),
+            const SizedBox(width: 10),
+            Text(
+              '¡Entrenamiento listo!',
+              style: TextStyle(
+                color: isDarkMode ? Colors.white : Colors.black,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Has completado tu rutina "${session.routineTitle}".',
+              style: TextStyle(color: isDarkMode ? Colors.white70 : Colors.black87),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: isDarkMode ? Colors.grey[800] : Colors.grey[100],
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  Column(
+                    children: [
+                      const Icon(Icons.timer, color: Colors.green),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${session.durationMinutes} min',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      ),
+                      const Text('Tiempo', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                    ],
+                  ),
+                  Column(
+                    children: [
+                      const Icon(Icons.local_fire_department, color: Colors.redAccent),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${session.caloriesBurned} kcal',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      ),
+                      const Text('Calorías', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Tus metas diarias han sido actualizadas.',
+              style: TextStyle(fontSize: 12, color: isDarkMode ? Colors.white54 : Colors.black54),
+            ),
+          ],
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(ctx); // Cierra diálogo
+              Navigator.pop(context); // Regresa a pantalla anterior
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: isDarkMode ? Colors.white : Colors.black,
+              foregroundColor: isDarkMode ? Colors.black : Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: const Text('Aceptar', style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmarDescartar() {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        backgroundColor: isDarkMode ? Colors.grey[900] : Colors.white,
+        title: const Text('¿Descartar entrenamiento?'),
+        content: const Text('El tiempo transcurrido y las series registradas no se guardarán.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(
+              'Continuar',
+              style: TextStyle(color: isDarkMode ? Colors.white70 : Colors.black54),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              ActiveWorkoutService.instance.cancelWorkout();
+              Navigator.pop(ctx);
+              Navigator.pop(context);
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+            child: const Text('Descartar', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    final ejercicios = widget.routine.exercises;
-    final ejercicioActual = ejercicios[_currentExerciseIndex];
-    final seriesActuales = _seriesDeHoy[ejercicioActual.id] ?? [];
-    final textoPesoAnterior = _pesoAnterior[ejercicioActual.id] ?? 'Sin registro previo';
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          widget.routine.title,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-      ),
-      body: GestureDetector(
-        onTap: () => FocusScope.of(context).unfocus(),
-        child: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 10.0),
-            child: Column(
-              children: [
-                Text(
-                  'Ejercicio ${_currentExerciseIndex + 1} de ${ejercicios.length}',
-                  style: TextStyle(
-                    color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
-                    fontSize: 15,
-                  ),
+    return ListenableBuilder(
+      listenable: ActiveWorkoutService.instance,
+      builder: (context, _) {
+        final service = ActiveWorkoutService.instance;
+        final ejercicios = widget.routine.exercises;
+        final index = service.currentExerciseIndex;
+        final ejercicioActual = ejercicios[index];
+        final seriesActuales = service.seriesDeHoy[ejercicioActual.id] ?? [];
+        final textoPesoAnterior = service.pesoAnterior[ejercicioActual.id] ?? 'Sin registro previo';
+
+        return Scaffold(
+          appBar: AppBar(
+            // Flecha hacia abajo para minimizar y volver a la pantalla de Rutinas
+            leading: IconButton(
+              icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 30),
+              tooltip: 'Minimizar entrenamiento',
+              onPressed: () {
+                Navigator.of(context).popUntil((route) => route.isFirst);
+              },
+            ),
+            title: Text(
+              widget.routine.title,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+            ),
+            actions: [
+              TextButton.icon(
+                onPressed: _finalizarEntrenamiento,
+                icon: const Icon(Icons.check_circle_outline, color: Colors.green),
+                label: const Text(
+                  'Finalizar',
+                  style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
                 ),
-                const SizedBox(height: 6),
-
-                Text(
-                  ejercicioActual.name,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: isDarkMode ? Colors.white : Colors.black,
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(15),
-                  child: Container(
-                    color: Colors.white,
-                    child: Image.asset(
-                      'assets/images/exercises/${ejercicioActual.id}.jpg',
-                      height: 200,
-                      width: double.infinity,
-                      fit: BoxFit.contain,
-                      errorBuilder: (context, error, stackTrace) => SizedBox(
-                        height: 200,
-                        child: Icon(
-                          Icons.fitness_center,
-                          size: 80,
-                          color: isDarkMode ? Colors.white : Colors.black,
-                        ),
-                      ),
+              ),
+              PopupMenuButton<String>(
+                icon: const Icon(Icons.more_vert),
+                onSelected: (value) {
+                  if (value == 'discard') _confirmarDescartar();
+                },
+                itemBuilder: (context) => [
+                  const PopupMenuItem(
+                    value: 'discard',
+                    child: Row(
+                      children: [
+                        Icon(Icons.delete_outline, color: Colors.redAccent, size: 20),
+                        SizedBox(width: 8),
+                        Text('Descartar sesión', style: TextStyle(color: Colors.redAccent)),
+                      ],
                     ),
                   ),
-                ),
-                const SizedBox(height: 16),
-
-                //Tarjeta que tiene el peso anterior
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: isDarkMode ? Colors.grey[900] : Colors.grey[100],
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.history,
-                        color: isDarkMode ? Colors.white : Colors.black,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Peso anterior: $textoPesoAnterior',
-                        style: TextStyle(
-                          color: isDarkMode ? Colors.white : Colors.black,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                //Campos de Peso y Repeticiones
-                Row(
+                ],
+              ),
+            ],
+          ),
+          body: GestureDetector(
+            onTap: () => FocusScope.of(context).unfocus(),
+            child: SafeArea(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 10.0),
+                child: Column(
                   children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _weightController,
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                        decoration: InputDecoration(
-                          labelText: 'Peso (kg)',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(15),
-                          ),
+                    // BANNER DEL CRONÓMETRO (con controles)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: isDarkMode ? Colors.grey[900] : Colors.grey[100],
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: service.isTimerRunning
+                              ? Colors.green.withOpacity(0.5)
+                              : Colors.orange.withOpacity(0.5),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: TextField(
-                        controller: _repsController,
-                        keyboardType: TextInputType.number,
-                        decoration: InputDecoration(
-                          labelText: 'Repeticiones',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(15),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-
-                ElevatedButton(
-                  onPressed: _guardarSerie,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: isDarkMode ? Colors.white : Colors.black,
-                    foregroundColor: isDarkMode ? Colors.black : Colors.white,
-                    minimumSize: const Size(double.infinity, 55),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                  child: const Text(
-                    'Guardar Serie',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-
-                //Series registradas hoy
-                if (seriesActuales.isNotEmpty) ...[
-                  const SizedBox(height: 20),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      'Series registradas hoy:',
-                      style: TextStyle(
-                        color: isDarkMode ? Colors.white : Colors.black,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  ...seriesActuales.asMap().entries.map(
-                        (entry) => Card(
-                          elevation: 0,
-                          color: isDarkMode ? Colors.grey[900] : Colors.grey[100],
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: ListTile(
-                            dense: true,
-                            leading: CircleAvatar(
-                              backgroundColor: isDarkMode ? Colors.white : Colors.black,
-                              radius: 14,
-                              child: Text(
-                                '${entry.key + 1}',
-                                style: TextStyle(
-                                  color: isDarkMode ? Colors.black : Colors.white,
-                                  fontSize: 12,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.timer_outlined,
+                                color: service.isTimerRunning ? Colors.green : Colors.orange,
+                                size: 24,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                service.formattedDuration,
+                                style: const TextStyle(
+                                  fontSize: 22,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
+                            ],
+                          ),
+                          IconButton(
+                            onPressed: () {
+                              service.toggleTimer();
+                            },
+                            icon: Icon(
+                              service.isTimerRunning
+                                  ? Icons.pause_circle_filled
+                                  : Icons.play_circle_filled,
+                              color: service.isTimerRunning ? Colors.orange : Colors.green,
+                              size: 32,
                             ),
-                            title: Text(
-                              entry.value,
-                              style: TextStyle(
-                                color: isDarkMode ? Colors.white : Colors.black,
-                                fontSize: 15,
+                            tooltip: service.isTimerRunning ? 'Pausar' : 'Reanudar',
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+
+                    Text(
+                      'Ejercicio ${index + 1} de ${ejercicios.length}',
+                      style: TextStyle(
+                        color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                        fontSize: 15,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+
+                    Text(
+                      ejercicioActual.name,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: isDarkMode ? Colors.white : Colors.black,
+                        fontSize: 26,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(15),
+                      child: Container(
+                        color: Colors.white,
+                        child: Image.asset(
+                          'assets/images/exercises/${ejercicioActual.id}.jpg',
+                          height: 180,
+                          width: double.infinity,
+                          fit: BoxFit.contain,
+                          errorBuilder: (context, error, stackTrace) => SizedBox(
+                            height: 180,
+                            child: Icon(
+                              Icons.fitness_center,
+                              size: 80,
+                              color: isDarkMode ? Colors.white : Colors.black,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+
+                    // Tarjeta de peso anterior
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: isDarkMode ? Colors.grey[900] : Colors.grey[100],
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.history,
+                            color: isDarkMode ? Colors.white : Colors.black,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Peso anterior: $textoPesoAnterior',
+                            style: TextStyle(
+                              color: isDarkMode ? Colors.white : Colors.black,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Inputs de Peso y Repeticiones
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _weightController,
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            decoration: InputDecoration(
+                              labelText: 'Peso (kg)',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(15),
                               ),
                             ),
                           ),
                         ),
-                      ),
-                ],
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: TextField(
+                            controller: _repsController,
+                            keyboardType: TextInputType.number,
+                            decoration: InputDecoration(
+                              labelText: 'Repeticiones',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(15),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
 
-                const SizedBox(height: 24),
-
-                //Navegación entre ejercicios de la rutina
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    if (_currentExerciseIndex > 0)
-                      OutlinedButton.icon(
-                        onPressed: () {
-                          setState(() {
-                            _currentExerciseIndex--;
-                          });
-                        },
-                        icon: Icon(
-                          Icons.arrow_back,
-                          color: isDarkMode ? Colors.white : Colors.black,
-                        ),
-                        label: Text(
-                          'Anterior',
-                          style: TextStyle(
-                            color: isDarkMode ? Colors.white : Colors.black,
-                          ),
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          side: BorderSide(
-                            color: isDarkMode ? Colors.grey[700]! : Colors.grey[400]!,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                        ),
-                      )
-                    else
-                      const SizedBox(),
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        if (_currentExerciseIndex < ejercicios.length - 1) {
-                          setState(() {
-                            _currentExerciseIndex++;
-                          });
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('¡Rutina completada!')),
-                          );
-                          Navigator.pop(context);
-                        }
-                      },
-                      icon: Icon(
-                        _currentExerciseIndex < ejercicios.length - 1
-                            ? Icons.arrow_forward
-                            : Icons.check,
-                      ),
-                      label: Text(
-                        _currentExerciseIndex < ejercicios.length - 1
-                            ? 'Siguiente'
-                            : 'Finalizar',
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
+                    ElevatedButton(
+                      onPressed: _guardarSerie,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: isDarkMode ? Colors.white : Colors.black,
                         foregroundColor: isDarkMode ? Colors.black : Colors.white,
+                        minimumSize: const Size(double.infinity, 52),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                         ),
                       ),
+                      child: const Text(
+                        'Guardar Serie',
+                        style: TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+
+                    // Series registradas hoy
+                    if (seriesActuales.isNotEmpty) ...[
+                      const SizedBox(height: 20),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          'Series registradas hoy:',
+                          style: TextStyle(
+                            color: isDarkMode ? Colors.white : Colors.black,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      ...seriesActuales.asMap().entries.map(
+                            (entry) => Card(
+                              elevation: 0,
+                              color: isDarkMode ? Colors.grey[900] : Colors.grey[100],
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: ListTile(
+                                dense: true,
+                                leading: CircleAvatar(
+                                  backgroundColor: isDarkMode ? Colors.white : Colors.black,
+                                  radius: 14,
+                                  child: Text(
+                                    '${entry.key + 1}',
+                                    style: TextStyle(
+                                      color: isDarkMode ? Colors.black : Colors.white,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                                title: Text(
+                                  entry.value,
+                                  style: TextStyle(
+                                    color: isDarkMode ? Colors.white : Colors.black,
+                                    fontSize: 15,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                    ],
+
+                    const SizedBox(height: 24),
+
+                    // Navegación entre ejercicios
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        if (index > 0)
+                          OutlinedButton.icon(
+                            onPressed: () => service.previousExercise(),
+                            icon: Icon(
+                              Icons.arrow_back,
+                              color: isDarkMode ? Colors.white : Colors.black,
+                            ),
+                            label: Text(
+                              'Anterior',
+                              style: TextStyle(
+                                color: isDarkMode ? Colors.white : Colors.black,
+                              ),
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              side: BorderSide(
+                                color: isDarkMode ? Colors.grey[700]! : Colors.grey[400]!,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                            ),
+                          )
+                        else
+                          const SizedBox(),
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            if (index < ejercicios.length - 1) {
+                              service.nextExercise();
+                            } else {
+                              _finalizarEntrenamiento();
+                            }
+                          },
+                          icon: Icon(
+                            index < ejercicios.length - 1 ? Icons.arrow_forward : Icons.check,
+                          ),
+                          label: Text(
+                            index < ejercicios.length - 1 ? 'Siguiente' : 'Finalizar',
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: isDarkMode ? Colors.white : Colors.black,
+                            foregroundColor: isDarkMode ? Colors.black : Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ],
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

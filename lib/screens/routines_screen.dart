@@ -1,10 +1,12 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:gymbook/models/routine.dart';
-import 'package:syncfusion_flutter_charts/charts.dart';
+import 'package:gymbook/widgets/daily_progress_rings.dart';
+import 'package:gymbook/widgets/active_workout_mini_bar.dart';
 import 'package:gymbook/screens/settings_screen.dart';
 import 'package:gymbook/widgets/routine_item.dart';
 import 'package:gymbook/screens/exercises_list_screen.dart';
+import 'package:gymbook/screens/progress_screen.dart';
 import 'package:gymbook/screens/profile_screen.dart';
 import 'package:gymbook/main.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -69,7 +71,11 @@ class _RoutinesScreenState extends State<RoutinesScreen> {
       appBar: AppBar(
         centerTitle: true,
         title: Text(
-          currentPageIndex == 1 ? 'Ejercicios' : 'Mis rutinas',
+          currentPageIndex == 1
+              ? 'Ejercicios'
+              : currentPageIndex == 2
+                  ? 'Progreso'
+                  : 'Mis rutinas',
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         // Foto de perfil, si no hay foto sale el icono
@@ -100,10 +106,12 @@ class _RoutinesScreenState extends State<RoutinesScreen> {
           ),
         ],
       ),
-      // Si estamos en la pestaña Ejercicios mostramos el catalogo
+      // Pestañas: 0 = Rutinas, 1 = Ejercicios, 2 = Progreso
       body: currentPageIndex == 1
           ? const ExercisesListScreen()
-          : ListView(
+          : currentPageIndex == 2
+              ? const ProgressScreen()
+              : ListView(
         padding: const EdgeInsets.all(20),
         children: [
           // FILA PRINCIPAL
@@ -128,48 +136,8 @@ class _RoutinesScreenState extends State<RoutinesScreen> {
                 },
               ),
 
-              // GRÁFICA
-              SizedBox(
-                height: 80,
-                width: 80,
-                child: SfCircularChart(
-                  margin: EdgeInsets.zero,
-                  series: <CircularSeries>[
-                    RadialBarSeries<double, String>(
-                      dataSource: const [6500],
-                      xValueMapper: (double data, _) => 'Pasos',
-                      yValueMapper: (double data, _) => data,
-                      pointColorMapper: (double data, _) => Colors.red,
-                      maximumValue: 10000,
-                      innerRadius: '75%',
-                      cornerStyle: CornerStyle.bothCurve,
-                      trackColor: isDarkMode ? Colors.grey[800]! : Colors.grey[300]!,
-                    )
-                  ],
-                  annotations: <CircularChartAnnotation>[
-                    CircularChartAnnotation(
-                      widget: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.directions_walk,
-                            size: 16,
-                            color: isDarkMode ? Colors.white : Colors.black,
-                          ),
-                          Text(
-                            '6.5k',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12,
-                              color: isDarkMode ? Colors.white : Colors.black,
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-                  ],
-                ),
-              ),
+              // CÍRCULOS DE PROGRESO DIARIO (KCAL Y TIEMPO)
+              const DailyProgressRings(),
             ],
           ),
 
@@ -211,56 +179,52 @@ class _RoutinesScreenState extends State<RoutinesScreen> {
           ...misRutinas.map((rutina) => RoutineItem(routine: rutina)), ///////////////////////7
         ],
       ),
-      bottomNavigationBar: NavigationBarTheme(
-        data: NavigationBarThemeData(
-          labelTextStyle: WidgetStateProperty.all(
-            TextStyle(
-              color: isDarkMode ? Colors.black : Colors.white,
-              fontSize: 12,
+      bottomNavigationBar: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const ActiveWorkoutMiniBar(),
+          NavigationBarTheme(
+            data: NavigationBarThemeData(
+              labelTextStyle: WidgetStateProperty.all(
+                TextStyle(
+                  color: isDarkMode ? Colors.black : Colors.white,
+                  fontSize: 12,
+                ),
+              ),
+              iconTheme: WidgetStateProperty.resolveWith((states) {
+                if (states.contains(WidgetState.selected)) {
+                  return IconThemeData(color: isDarkMode ? Colors.white : Colors.black);
+                }
+                return IconThemeData(color: isDarkMode ? Colors.black : Colors.white);
+              }),
+            ),
+            child: NavigationBar(
+              backgroundColor: isDarkMode ? Colors.white : Colors.black,
+              indicatorColor: isDarkMode ? Colors.black : Colors.white,
+              selectedIndex: currentPageIndex,
+              onDestinationSelected: (int index) {
+                setState(() {
+                  currentPageIndex = index;
+                });
+              },
+              destinations: const [
+                NavigationDestination(
+                  icon: Icon(Icons.home_outlined),
+                  selectedIcon: Icon(Icons.fitness_center),
+                  label: 'Rutinas',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.list_alt),
+                  label: 'Ejercicios',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.bar_chart),
+                  label: 'Progreso',
+                ),
+              ],
             ),
           ),
-          iconTheme: WidgetStateProperty.resolveWith((states) {
-            if (states.contains(WidgetState.selected)) {
-              return IconThemeData(color: isDarkMode ? Colors.white : Colors.black);
-            }
-            return IconThemeData(color: isDarkMode ? Colors.black : Colors.white);
-          }),
-        ),
-        child: NavigationBar(
-          backgroundColor: isDarkMode ? Colors.white : Colors.black,
-          indicatorColor: isDarkMode ? Colors.black : Colors.white,
-          selectedIndex: currentPageIndex,
-          onDestinationSelected: (int index) {
-            if (index == 0 || index == 1) {
-              setState(() {
-                currentPageIndex = index;
-              });
-            } else {
-              showDialog(
-                context: context,
-                builder: (context) => const AlertDialog(
-                  title: Text('Pendiente'),
-                  content: Text('Esta sección aún no está funcional.'),
-                ),
-              );
-            }
-          },
-          destinations: const [
-            NavigationDestination(
-              icon: Icon(Icons.home_outlined),
-              selectedIcon: Icon(Icons.fitness_center),
-              label: 'Rutinas',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.list_alt),
-              label: 'Ejercicios',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.bar_chart),
-              label: 'Progreso',
-            ),
-          ],
-        ),
+        ],
       ),
     );
   }
