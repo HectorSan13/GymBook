@@ -4,10 +4,51 @@ import 'package:gymbook/main.dart';
 import 'package:gymbook/screens/welcome_screen.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:gymbook/screens/profile_screen.dart';
+import 'package:gymbook/services/user_service.dart';
 
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
+
+  // Alerta para confirmar antes de eliminar la cuenta
+  void _confirmarEliminar(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('¿Eliminar cuenta?'),
+        content: const Text('Se borrarán tu cuenta y tus rutinas.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(dialogContext);
+              try {
+                await eliminarCuenta();
+                photoNotifier.value = '';
+                if (context.mounted) {
+                  Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(builder: (context) => const WelcomeScreen()),
+                        (route) => false,
+                  );
+                }
+              } catch (e) {
+                // Firebase a veces pide volver a iniciar sesion para borrar la cuenta
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Cierra sesión, vuelve a entrar e inténtalo de nuevo.')),
+                  );
+                }
+              }
+            },
+            child: const Text('Sí, eliminar', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -118,9 +159,8 @@ class SettingsScreen extends StatelessWidget {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: () {
-                        // Lógica de eliminar cuenta
-                      },
+                      // Pregunta antes de eliminar la cuenta
+                      onPressed: () => _confirmarEliminar(context),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: isDarkMode ? Colors.grey[900] : Colors.white,
                         foregroundColor: isDarkMode ? Colors.white : Colors.black,

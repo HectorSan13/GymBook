@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:gymbook/main.dart';
+import 'package:gymbook/services/user_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -27,9 +28,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   // Guarda el nombre y la foto, y regresa a Ajustes
-  void _save() {
+  Future<void> _save() async {
     nicknameNotifier.value = _nameController.text;
     photoNotifier.value = _photoPath;
+    // El apodo tambien se guarda en Firestore
+    await guardarApodo(_nameController.text);
+    if (!mounted) return;
     Navigator.pop(context);
   }
 
@@ -46,7 +50,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       body: ListView(
         padding: const EdgeInsets.all(24),
         children: [
-          // Foto  si no hay foto sale el icono, si hay sale la foto
+          // Foto  si no hay foto sale el icono si hay sale la foto
           Center(
             child: GestureDetector(
               onTap: _pickPhoto,
