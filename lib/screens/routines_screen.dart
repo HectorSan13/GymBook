@@ -70,8 +70,8 @@ class _RoutinesScreenState extends State<RoutinesScreen> {
           currentPageIndex == 1
               ? 'Ejercicios'
               : currentPageIndex == 2
-                  ? 'Progreso'
-                  : 'Mis rutinas',
+              ? 'Progreso'
+              : 'Mis rutinas',
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         leading: ValueListenableBuilder<String>(
@@ -81,9 +81,9 @@ class _RoutinesScreenState extends State<RoutinesScreen> {
               icon: photo == ''
                   ? const Icon(Icons.person)
                   : CircleAvatar(
-                      radius: 16,
-                      backgroundImage: FileImage(File(photo)),
-                    ),
+                radius: 16,
+                backgroundImage: FileImage(File(photo)),
+              ),
               onPressed: () {
                 Navigator.push(
                   context,
@@ -112,152 +112,164 @@ class _RoutinesScreenState extends State<RoutinesScreen> {
       body: currentPageIndex == 1
           ? const ExercisesListScreen()
           : currentPageIndex == 2
-              ? const ProgressScreen()
-              : ListView(
-                  padding: const EdgeInsets.all(20),
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        ValueListenableBuilder<String>(
-                          valueListenable: nicknameNotifier,
-                          builder: (context, nickname, child) {
-                            final nombre =
-                                FirebaseAuth.instance.currentUser?.displayName ??
-                                    '';
-                            return Text(
-                              nickname == '' ? nombre : nickname,
-                              style: TextStyle(
-                                fontSize: 20,
-                                color: isDarkMode ? Colors.white : Colors.black,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            );
-                          },
-                        ),
-                        const DailyProgressRings(),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-                    Center(
-                      child: ElevatedButton(
-                        onPressed: _agregarRutina,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor:
-                              isDarkMode ? Colors.white : Colors.black,
-                          foregroundColor:
-                              isDarkMode ? Colors.black : Colors.white,
-                          padding: const EdgeInsets.all(20.0),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                        ),
-                        child: const Icon(Icons.add, size: 50),
+          ? const ProgressScreen()
+      // Jalar hacia abajo vuelve a cargar las rutinas desde Firebase
+          : RefreshIndicator(
+        onRefresh: () async {
+          await FirebaseFirestore.instance
+              .collection('rutinas')
+              .where('uid', isEqualTo: uid)
+              .get();
+          setState(() {});
+        },
+        child: ListView(
+          // Para que se pueda jalar aunque haya pocas rutinas
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(20),
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                ValueListenableBuilder<String>(
+                  valueListenable: nicknameNotifier,
+                  builder: (context, nickname, child) {
+                    final nombre =
+                        FirebaseAuth.instance.currentUser?.displayName ??
+                            '';
+                    return Text(
+                      nickname == '' ? nombre : nickname,
+                      style: TextStyle(
+                        fontSize: 20,
+                        color: isDarkMode ? Colors.white : Colors.black,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    );
+                  },
+                ),
+                const DailyProgressRings(),
+              ],
+            ),
+            const SizedBox(height: 20),
+            Center(
+              child: ElevatedButton(
+                onPressed: _agregarRutina,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor:
+                  isDarkMode ? Colors.white : Colors.black,
+                  foregroundColor:
+                  isDarkMode ? Colors.black : Colors.white,
+                  padding: const EdgeInsets.all(20.0),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                child: const Icon(Icons.add, size: 50),
+              ),
+            ),
+            StreamBuilder<QuerySnapshot>(
+              stream: getRoutinesStream(uid),
+              builder: (context, snapshot) {
+                if (snapshot.hasError) {
+                  return Padding(
+                    padding: const EdgeInsets.all(20.0),
+                    child: Center(
+                      child: Text(
+                        'Error al cargar rutinas: ${snapshot.error}',
                       ),
                     ),
-                    StreamBuilder<QuerySnapshot>(
-                      stream: getRoutinesStream(uid),
-                      builder: (context, snapshot) {
-                        if (snapshot.hasError) {
-                          return Padding(
-                            padding: const EdgeInsets.all(20.0),
-                            child: Center(
-                              child: Text(
-                                'Error al cargar rutinas: ${snapshot.error}',
-                              ),
-                            ),
-                          );
-                        }
+                  );
+                }
 
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return Padding(
-                            padding: const EdgeInsets.all(30.0),
-                            child: Center(
-                              child: CircularProgressIndicator(
-                                color:
-                                    isDarkMode ? Colors.white : Colors.black,
-                              ),
-                            ),
-                          );
-                        }
+                if (snapshot.connectionState ==
+                    ConnectionState.waiting) {
+                  return Padding(
+                    padding: const EdgeInsets.all(30.0),
+                    child: Center(
+                      child: CircularProgressIndicator(
+                        color:
+                        isDarkMode ? Colors.white : Colors.black,
+                      ),
+                    ),
+                  );
+                }
 
-                        final docs = snapshot.data?.docs ?? [];
+                final docs = snapshot.data?.docs ?? [];
 
-                        if (docs.isEmpty) {
-                          return Column(
-                            children: [
-                              Padding(
-                                padding: const EdgeInsets.all(15.0),
-                                child: Text(
-                                  'Toca + para crear tu primera rutina.',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w500,
-                                    color: isDarkMode
-                                        ? Colors.white70
-                                        : Colors.black87,
-                                  ),
-                                ),
-                              ),
-                              OutlinedButton(
-                                onPressed: () => _cargarRutinasDeEjemplo(uid),
-                                style: OutlinedButton.styleFrom(
-                                  foregroundColor:
-                                      isDarkMode ? Colors.white : Colors.black,
-                                  side: BorderSide(
-                                    color: isDarkMode
-                                        ? Colors.grey[700]!
-                                        : Colors.grey[400]!,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(14),
-                                  ),
-                                ),
-                                child: const Text('Cargar rutinas de ejemplo'),
-                              ),
-                            ],
-                          );
-                        }
+                if (docs.isEmpty) {
+                  return Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(15.0),
+                        child: Text(
+                          'Toca + para crear tu primera rutina.',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w500,
+                            color: isDarkMode
+                                ? Colors.white70
+                                : Colors.black87,
+                          ),
+                        ),
+                      ),
+                      OutlinedButton(
+                        onPressed: () => _cargarRutinasDeEjemplo(uid),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor:
+                          isDarkMode ? Colors.white : Colors.black,
+                          side: BorderSide(
+                            color: isDarkMode
+                                ? Colors.grey[700]!
+                                : Colors.grey[400]!,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        child: const Text('Cargar rutinas de ejemplo'),
+                      ),
+                    ],
+                  );
+                }
 
-                        final rutinas = docs.map((doc) {
-                          final data = doc.data() as Map<String, dynamic>;
-                          final rawIds =
-                              data['exerciseIds'] as List<dynamic>? ?? [];
-                          final ids = rawIds.map((e) => e.toString()).toList();
+                final rutinas = docs.map((doc) {
+                  final data = doc.data() as Map<String, dynamic>;
+                  final rawIds =
+                      data['exerciseIds'] as List<dynamic>? ?? [];
+                  final ids = rawIds.map((e) => e.toString()).toList();
 
-                          return Routine(
-                            id: doc.id,
-                            title: data['title'] ?? 'Sin nombre',
-                            exercises: findExercisesByIds(ids),
-                          );
-                        }).toList();
+                  return Routine(
+                    id: doc.id,
+                    title: data['title'] ?? 'Sin nombre',
+                    exercises: findExercisesByIds(ids),
+                  );
+                }).toList();
 
-                        return Column(
-                          children: [
-                            Center(
-                              child: Padding(
-                                padding: const EdgeInsets.all(15.0),
-                                child: Text(
-                                  'Tus rutinas guardadas:',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w500,
-                                    color: isDarkMode
-                                        ? Colors.white70
-                                        : Colors.black87,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 10),
-                            ...rutinas.map(
-                              (rutina) => RoutineItem(routine: rutina),
-                            ),
-                          ],
-                        );
-                      },
+                return Column(
+                  children: [
+                    Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(15.0),
+                        child: Text(
+                          'Tus rutinas guardadas:',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w500,
+                            color: isDarkMode
+                                ? Colors.white70
+                                : Colors.black87,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    ...rutinas.map(
+                          (rutina) => RoutineItem(routine: rutina),
                     ),
                   ],
-                ),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
       bottomNavigationBar: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
