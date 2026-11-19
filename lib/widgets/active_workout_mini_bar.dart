@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/active_workout_service.dart';
+import 'package:provider/provider.dart';
 import '../screens/active_workout_screen.dart';
 
 class ActiveWorkoutMiniBar extends StatelessWidget {
@@ -9,10 +10,9 @@ class ActiveWorkoutMiniBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
-    return ListenableBuilder(
-      listenable: ActiveWorkoutService.instance,
-      builder: (context, _) {
-        final service = ActiveWorkoutService.instance;
+    // Con Provider escuchamos los cambios del servicio
+    return Consumer<ActiveWorkoutService>(
+      builder: (context, service, child) {
 
         // Si no hay entrenamiento activo, no mostramos nada
         if (!service.isWorkoutActive || service.activeRoutine == null) {

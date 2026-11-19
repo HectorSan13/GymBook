@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/progress_service.dart';
+import 'package:provider/provider.dart';
 import '../models/workout_session.dart';
 
 class ProgressScreen extends StatefulWidget {
@@ -55,10 +56,9 @@ class _ProgressScreenState extends State<ProgressScreen> {
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
-    return ListenableBuilder(
-      listenable: ProgressService.instance,
-      builder: (context, _) {
-        final service = ProgressService.instance;
+    // Con Provider escuchamos los cambios del servicio
+    return Consumer<ProgressService>(
+      builder: (context, service, child) {
         final sessionsToday = service.getSessionsForDay(_selectedDay);
 
         final totalDayMinutes = sessionsToday.fold<int>(0, (sum, s) => sum + s.durationMinutes);
@@ -179,8 +179,8 @@ class _ProgressScreenState extends State<ProgressScreen> {
               color: isSelected
                   ? (isDarkMode ? Colors.white : Colors.black)
                   : (isToday
-                      ? (isDarkMode ? Colors.grey[850] : Colors.grey[200])
-                      : Colors.transparent),
+                  ? (isDarkMode ? Colors.grey[850] : Colors.grey[200])
+                  : Colors.transparent),
               borderRadius: BorderRadius.circular(12),
               border: isToday && !isSelected
                   ? Border.all(color: isDarkMode ? Colors.white38 : Colors.black26)
@@ -201,7 +201,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
                 ),
                 const SizedBox(height: 2),
 
-                // CÍRCULOS INDICADORES DE ENTRENAMIENTO (VERDE Y ROJO)
+                // CÍRCULOS INDICADORES DE ENTRENAMIENTO VERDE Y ROJO
                 if (hasWorkout)
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -216,7 +216,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
                         ),
                       ),
                       const SizedBox(width: 3),
-                      // Círculo Verde (Tiempo)
+                      // Círculo Verde TiempO
                       Container(
                         width: 6,
                         height: 6,
@@ -431,7 +431,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
             const SizedBox(height: 8),
 
             ...sessions.map(
-              (session) => Card(
+                  (session) => Card(
                 elevation: 0,
                 margin: const EdgeInsets.only(bottom: 8),
                 color: isDarkMode ? Colors.grey[850] : Colors.white,

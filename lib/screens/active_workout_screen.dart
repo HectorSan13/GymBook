@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/routine.dart';
 import '../services/active_workout_service.dart';
+import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/firestore_service.dart';
@@ -206,10 +207,9 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final uid = FirebaseAuth.instance.currentUser?.uid ?? 'guest';
 
-    return ListenableBuilder(
-      listenable: ActiveWorkoutService.instance,
-      builder: (context, _) {
-        final service = ActiveWorkoutService.instance;
+    // Con Provider escuchamos los cambios del servicio
+    return Consumer<ActiveWorkoutService>(
+      builder: (context, service, child) {
         final ejercicios = widget.routine.exercises;
         final index = service.currentExerciseIndex;
         final ejercicioActual = ejercicios[index];
@@ -478,35 +478,35 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
                       const SizedBox(height: 8),
                       ...seriesActuales.asMap().entries.map(
                             (entry) => Card(
-                              elevation: 0,
-                              color: isDarkMode ? Colors.grey[900] : Colors.grey[100],
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: ListTile(
-                                dense: true,
-                                leading: CircleAvatar(
-                                  backgroundColor: isDarkMode ? Colors.white : Colors.black,
-                                  radius: 14,
-                                  child: Text(
-                                    '${entry.key + 1}',
-                                    style: TextStyle(
-                                      color: isDarkMode ? Colors.black : Colors.white,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                                title: Text(
-                                  entry.value,
-                                  style: TextStyle(
-                                    color: isDarkMode ? Colors.white : Colors.black,
-                                    fontSize: 15,
-                                  ),
+                          elevation: 0,
+                          color: isDarkMode ? Colors.grey[900] : Colors.grey[100],
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: ListTile(
+                            dense: true,
+                            leading: CircleAvatar(
+                              backgroundColor: isDarkMode ? Colors.white : Colors.black,
+                              radius: 14,
+                              child: Text(
+                                '${entry.key + 1}',
+                                style: TextStyle(
+                                  color: isDarkMode ? Colors.black : Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
                             ),
+                            title: Text(
+                              entry.value,
+                              style: TextStyle(
+                                color: isDarkMode ? Colors.white : Colors.black,
+                                fontSize: 15,
+                              ),
+                            ),
                           ),
+                        ),
+                      ),
                     ],
 
                     const SizedBox(height: 24),

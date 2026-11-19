@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 import '../services/progress_service.dart';
+import 'package:provider/provider.dart';
 import 'goal_adjust_dialog.dart';
 
 class DailyProgressRings extends StatelessWidget {
@@ -127,10 +128,9 @@ class DailyProgressRings extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
-    return ListenableBuilder(
-      listenable: ProgressService.instance,
-      builder: (context, _) {
-        final service = ProgressService.instance;
+    // Con Provider escuchamos los cambios del servicio
+    return Consumer<ProgressService>(
+      builder: (context, service, child) {
         final currentCalories = service.todayCalories.toDouble();
         final targetCalories = service.dailyGoals.targetCalories.toDouble();
         final currentMinutes = service.todayMinutes.toDouble();

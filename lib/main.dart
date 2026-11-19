@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'package:gymbook/screens/welcome_screen.dart';
+import 'package:provider/provider.dart';
+import 'package:gymbook/services/progress_service.dart';
+import 'package:gymbook/services/active_workout_service.dart';
 
 // Notificador global para controlar el tema en toda la app
 final ValueNotifier<ThemeMode> themeNotifier = ValueNotifier(ThemeMode.light);
@@ -15,7 +18,16 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  runApp(const MyApp());
+  runApp(
+    // Provider los servicios quedan disponibles en toda la app
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider.value(value: ProgressService.instance),
+        ChangeNotifierProvider.value(value: ActiveWorkoutService.instance),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
