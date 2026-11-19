@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'active_workout_screen.dart';
 import '../models/routine.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'create_routine_screen.dart';
+import '../services/firestore_service.dart';
 
 class RoutineDetailScreen extends StatelessWidget {
   final Routine routine;
@@ -10,9 +13,45 @@ class RoutineDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
+    return StreamBuilder<DocumentSnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('rutinas')
+          .doc(routine.id)
+          .snapshots(),
+      builder: (context, snapshot) {
+        Routine currentRoutine = routine;
+
+        if (snapshot.hasData &&
+            snapshot.data != null &&
+            snapshot.data!.exists) {
+          final data = snapshot.data!.data() as Map<String, dynamic>;
+          final rawIds = data['exerciseIds'] as List<dynamic>? ?? [];
+          final ids = rawIds.map((e) => e.toString()).toList();
+          currentRoutine = Routine(
+            id: snapshot.data!.id,
+            title: data['title'] ?? routine.title,
+            exercises: findExercisesByIds(ids),
+          );
+        }
+    
     return Scaffold(
       appBar: AppBar(
         title: Text(routine.title),
+        actions: [
+              IconButton(
+                tooltip: 'Editar rutina',
+                icon: const Icon(Icons.edit_outlined),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          CreateRoutineScreen(routineToEdit: currentRoutine),
+                    ),
+                  );
+                },
+              ),
+            ],
       ),
       body: SafeArea(
         child: Column(
@@ -89,6 +128,8 @@ class RoutineDetailScreen extends StatelessWidget {
           ],
         ),
       ),
+    );
+    },
     );
   }
 }

@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import '../data/dummy_data.dart';
-import '../models/exercise.dart';
-import '../models/routine.dart';
+import 'package:gymbook/data/dummy_data.dart';
+import 'package:gymbook/models/exercise.dart';
+import 'package:gymbook/models/routine.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:gymbook/services/firestore_service.dart';
 
 class CreateRoutineScreen extends StatefulWidget {
   final Routine? routineToEdit;
-
   const CreateRoutineScreen({super.key, this.routineToEdit});
 
   @override
@@ -13,27 +14,15 @@ class CreateRoutineScreen extends StatefulWidget {
 }
 
 class _CreateRoutineScreenState extends State<CreateRoutineScreen> {
-  late final TextEditingController _nameController;
+  final TextEditingController _nameController = TextEditingController();
   final List<Exercise> _selectedExercises = [];
-
-  bool get isEditing => widget.routineToEdit != null;
 
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(
-      text: widget.routineToEdit?.title ?? '',
-    );
     if (widget.routineToEdit != null) {
-      // Mapeamos los ejercicios existentes buscando coincidencias por ID
-      final catalogExercises = temp_exercises.expand((cat) => cat.exercises).toList();
-      for (final existingEx in widget.routineToEdit!.exercises) {
-        final match = catalogExercises.firstWhere(
-          (catEx) => catEx.id == existingEx.id,
-          orElse: () => existingEx,
-        );
-        _selectedExercises.add(match);
-      }
+      _nameController.text = widget.routineToEdit!.title;
+      _selectedExercises.addAll(widget.routineToEdit!.exercises);
     }
   }
 
@@ -45,16 +34,16 @@ class _CreateRoutineScreenState extends State<CreateRoutineScreen> {
 
   void _toggleExercise(Exercise exercise) {
     setState(() {
-      final exists = _selectedExercises.any((e) => e.id == exercise.id);
-      if (exists) {
-        _selectedExercises.removeWhere((e) => e.id == exercise.id);
+      final existingIndex = _selectedExercises.indexWhere((e) => e.id == exercise.id);
+      if (existingIndex >= 0) {
+        _selectedExercises.removeAt(existingIndex);
       } else {
         _selectedExercises.add(exercise);
       }
     });
   }
 
-  void _saveRoutine() {
+  Future<void> _saveRoutine() async {
     final routineName = _nameController.text.trim();
 
     if (routineName.isEmpty) {
@@ -71,18 +60,30 @@ class _CreateRoutineScreenState extends State<CreateRoutineScreen> {
       return;
     }
 
-    final rutinaResult = Routine(
-      id: widget.routineToEdit?.id ?? DateTime.now().millisecondsSinceEpoch.toString(),
-      title: routineName,
-      exercises: List.from(_selectedExercises),
-    );
+    final uid = FirebaseAuth.instance.currentUser?.uid ?? 'guest';
+    final exerciseIds = _selectedExercises.map((e) => e.id).toList();
 
-    Navigator.pop(context, rutinaResult);
+    if (widget.routineToEdit != null) {
+      await updateRoutine(widget.routineToEdit!.id, routineName, exerciseIds);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Rutina actualizada correctamente.')),
+      );
+    } else {
+      await addRoutine(uid, routineName, exerciseIds);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Rutina guardada en Firebase.')),
+      );
+    }
+
+    Navigator.pop(context);
   }
 
   @override
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final isEditing = widget.routineToEdit != null;
 
     return Scaffold(
       appBar: AppBar(
@@ -90,6 +91,7 @@ class _CreateRoutineScreenState extends State<CreateRoutineScreen> {
           isEditing ? 'Editar Rutina' : 'Nueva Rutina',
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
+        centerTitle: true,
       ),
       body: GestureDetector(
         onTap: () => FocusScope.of(context).unfocus(),

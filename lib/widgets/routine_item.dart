@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:gymbook/models/routine.dart';
 import 'package:gymbook/screens/routine_detail_screen.dart';
+import 'package:gymbook/screens/create_routine_screen.dart';
+import 'package:gymbook/services/firestore_service.dart';
 
 class RoutineItem extends StatelessWidget {
   final Routine routine;
@@ -14,9 +16,63 @@ class RoutineItem extends StatelessWidget {
     this.onDelete,
   });
 
+  void _confirmDelete(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: isDark ? Colors.grey[900] : Colors.white,
+        title: Text(
+          'Eliminar rutina',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: isDark ? Colors.white : Colors.black,
+          ),
+        ),
+        content: Text(
+          '¿Seguro que quieres eliminar "${routine.title}"?',
+          style: TextStyle(
+            color: isDark ? Colors.white70 : Colors.black87,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(
+              'Cancelar',
+              style: TextStyle(
+                color: isDark ? Colors.grey[400] : Colors.grey[600],
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await deleteRoutine(routine.id);
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Rutina eliminada.')),
+                );
+              }
+            },
+            child: Text(
+              'Eliminar',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: isDark ? Colors.white : Colors.black,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final iconColor = isDark ? Colors.white : Colors.black;
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -76,51 +132,34 @@ class RoutineItem extends StatelessWidget {
                   ],
                 ),
               ),
-
-              // Menú de 3 puntos para Editar y Eliminar
-              if (onEdit != null || onDelete != null)
-                PopupMenuButton<String>(
-                  icon: Icon(
-                    Icons.more_vert,
-                    color: isDark ? Colors.white70 : Colors.black54,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  color: isDark ? Colors.grey[850] : Colors.white,
-                  onSelected: (value) {
-                    if (value == 'edit') onEdit?.call();
-                    if (value == 'delete') onDelete?.call();
-                  },
-                  itemBuilder: (context) => [
-                    const PopupMenuItem(
-                      value: 'edit',
-                      child: Row(
-                        children: [
-                          Icon(Icons.edit_outlined, size: 18),
-                          SizedBox(width: 10),
-                          Text('Editar'),
-                        ],
+              IconButton(
+                tooltip: 'Editar rutina',
+                icon: Icon(Icons.edit_outlined, color: iconColor, size: 22),
+                onPressed: () {
+                  if (onEdit != null) {
+                    onEdit!();
+                  } else {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            CreateRoutineScreen(routineToEdit: routine),
                       ),
-                    ),
-                    const PopupMenuItem(
-                      value: 'delete',
-                      child: Row(
-                        children: [
-                          Icon(Icons.delete_outline, color: Colors.redAccent, size: 18),
-                          SizedBox(width: 10),
-                          Text('Eliminar', style: TextStyle(color: Colors.redAccent)),
-                        ],
-                      ),
-                    ),
-                  ],
-                )
-              else
-                Icon(
-                  Icons.arrow_forward_ios,
-                  color: isDark ? Colors.white70 : Colors.black54,
-                  size: 16,
-                ),
+                    );
+                  }
+                },
+              ),
+              IconButton(
+                tooltip: 'Eliminar rutina',
+                icon: Icon(Icons.delete_outline, color: iconColor, size: 22),
+                onPressed: () {
+                  if (onDelete != null) {
+                    onDelete!();
+                  } else {
+                    _confirmDelete(context);
+                  }
+                },
+              ),
             ],
           ),
         ),

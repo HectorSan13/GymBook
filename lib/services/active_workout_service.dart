@@ -19,11 +19,7 @@ class ActiveWorkoutService extends ChangeNotifier {
   final Map<String, List<String>> _seriesDeHoy = {};
 
   // Historial de pesos anteriores de prueba
-  final Map<String, String> _pesoAnterior = {
-    '0042': '60 kg x 10 reps',
-    '0028': '50 kg x 10 reps',
-    '0054': '80 kg x 8 reps',
-  };
+  final Map<String, String> _pesoAnterior = {};
 
   // Getters
   bool get isWorkoutActive => _activeRoutine != null;
