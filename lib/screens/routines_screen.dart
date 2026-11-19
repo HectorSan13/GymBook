@@ -10,8 +10,8 @@ import 'package:gymbook/screens/progress_screen.dart';
 import 'package:gymbook/screens/profile_screen.dart';
 import 'package:gymbook/main.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:gymbook/data/dummy_data.dart';
 import 'package:gymbook/screens/create_routine_screen.dart';
+import 'package:gymbook/services/routines_service.dart';
 
 class RoutinesScreen extends StatefulWidget {
   const RoutinesScreen({super.key});
@@ -22,31 +22,34 @@ class RoutinesScreen extends StatefulWidget {
 
 class _RoutinesScreenState extends State<RoutinesScreen> {
   int currentPageIndex = 0;
+  List<Routine> _misRutinas = [];
+  bool _isLoading = true;
 
-  final List<Routine> misRutinas = [//Rutinas que apareceran por defecto
-    Routine(
-      id: 'r1',
-      title: 'Día de Pecho y Tríceps',
-      exercises: [
-        ...temp_exercises[0].exercises.take(3),
-        ...temp_exercises[3].exercises.take(2),
-      ],
-    ),
-    Routine(
-      id: 'r2',
-      title: 'Día de Espalda y Bíceps',
-      exercises: [
-        ...temp_exercises[1].exercises.take(3),
-        ...temp_exercises[3].exercises.skip(1).take(2),
-      ],
-    ),
-    Routine(
-      id: 'r3',
-      title: 'Día de Pierna (Cuádriceps)',
-      exercises: temp_exercises[5].exercises.take(4).toList(),
-    ),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _cargarRutinas();
+  }
 
+  // Cargar rutinas desde Cloud Firestore
+  Future<void> _cargarRutinas() async {
+    setState(() => _isLoading = true);
+    try {
+      final rutinas = await RoutinesService.instance.fetchRoutines();
+      if (mounted) {
+        setState(() {
+          _misRutinas = rutinas;
+          _isLoading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  // CREAR (Create)
   Future<void> _agregarRutina() async {
     final nuevaRutina = await Navigator.push<Routine>(
       context,
@@ -55,11 +58,79 @@ class _RoutinesScreenState extends State<RoutinesScreen> {
       ),
     );
 
-    //Cuando se de a guardar rutina, la agregamos y refrescamos la pantalla
     if (nuevaRutina != null) {
-      setState(() {
-        misRutinas.add(nuevaRutina);
-      });
+      await RoutinesService.instance.createRoutine(
+        title: nuevaRutina.title,
+        exercises: nuevaRutina.exercises,
+      );
+      await _cargarRutinas();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Rutina "${nuevaRutina.title}" guardada en Firebase.')),
+        );
+      }
+    }
+  }
+
+  // EDITAR (Update)
+  Future<void> _editarRutina(Routine rutina) async {
+    final rutinaEditada = await Navigator.push<Routine>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CreateRoutineScreen(routineToEdit: rutina),
+      ),
+    );
+
+    if (rutinaEditada != null) {
+      await RoutinesService.instance.updateRoutine(rutinaEditada);
+      await _cargarRutinas();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Rutina "${rutinaEditada.title}" actualizada.')),
+        );
+      }
+    }
+  }
+
+  // ELIMINAR (Delete)
+  Future<void> _eliminarRutina(Routine rutina) async {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        backgroundColor: isDarkMode ? Colors.grey[900] : Colors.white,
+        title: const Text('¿Eliminar rutina?'),
+        content: Text('Se eliminará "${rutina.title}" de tu cuenta permanentemente.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(
+              'Cancelar',
+              style: TextStyle(color: isDarkMode ? Colors.white70 : Colors.black54),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+            child: const Text('Eliminar', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmar == true) {
+      await RoutinesService.instance.deleteRoutine(rutina.id);
+      await _cargarRutinas();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Rutina "${rutina.title}" eliminada.')),
+        );
+      }
     }
   }
 
@@ -78,7 +149,7 @@ class _RoutinesScreenState extends State<RoutinesScreen> {
                   : 'Mis rutinas',
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
-        // Foto de perfil, si no hay foto sale el icono
+        // Foto de perfil
         leading: ValueListenableBuilder<String>(
           valueListenable: photoNotifier,
           builder: (context, photo, child) {
@@ -106,79 +177,109 @@ class _RoutinesScreenState extends State<RoutinesScreen> {
           ),
         ],
       ),
+
       // Pestañas: 0 = Rutinas, 1 = Ejercicios, 2 = Progreso
       body: currentPageIndex == 1
           ? const ExercisesListScreen()
           : currentPageIndex == 2
               ? const ProgressScreen()
-              : ListView(
-        padding: const EdgeInsets.all(20),
-        children: [
-          // FILA PRINCIPAL
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              // El nombre cambia cuando lo editan en Perfil
-              ValueListenableBuilder<String>(
-                valueListenable: nicknameNotifier,
-                builder: (context, nickname, child) {
-                  // Si no ha puesto apodo, sale el nombre con el que se registro
-                  final nombre = FirebaseAuth.instance.currentUser?.displayName ?? '';
+              : RefreshIndicator(
+                  // PULL TO REFRESH / SWIPE DOWN
+                  onRefresh: _cargarRutinas,
+                  color: isDarkMode ? Colors.white : Colors.black,
+                  backgroundColor: isDarkMode ? Colors.grey[900] : Colors.white,
+                  child: ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.all(20),
+                    children: [
+                      // FILA PRINCIPAL: Saludo + Anillos
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          ValueListenableBuilder<String>(
+                            valueListenable: nicknameNotifier,
+                            builder: (context, nickname, child) {
+                              final nombre = FirebaseAuth.instance.currentUser?.displayName ?? '';
+                              return Text(
+                                nickname == '' ? nombre : nickname,
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  color: isDarkMode ? Colors.white : Colors.black,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              );
+                            },
+                          ),
+                          // CÍRCULOS DE PROGRESO DIARIO (KCAL Y TIEMPO)
+                          const DailyProgressRings(),
+                        ],
+                      ),
 
-                  return Text(
-                    nickname == '' ? nombre : nickname,
-                    style: TextStyle(
-                      fontSize: 20,
-                      color: isDarkMode ? Colors.white : Colors.black,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  );
-                },
-              ),
+                      const SizedBox(height: 20),
 
-              // CÍRCULOS DE PROGRESO DIARIO (KCAL Y TIEMPO)
-              const DailyProgressRings(),
-            ],
-          ),
+                      // Botón gigante para agregar rutina
+                      Center(
+                        child: ElevatedButton(
+                          onPressed: _agregarRutina,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: isDarkMode ? Colors.white : Colors.black,
+                            foregroundColor: isDarkMode ? Colors.black : Colors.white,
+                            padding: const EdgeInsets.all(20.0),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                          ),
+                          child: const Icon(Icons.add, size: 50),
+                        ),
+                      ),
 
-          const Padding(
-            padding: EdgeInsets.all(16),
-          ),
+                      Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(15.0),
+                          child: Text(
+                            _misRutinas.isEmpty
+                                ? 'Toca + para crear tu primera rutina.'
+                                : 'Tus rutinas guardadas (Desliza abajo para recargar):',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w500,
+                              color: isDarkMode ? Colors.white70 : Colors.black87,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
 
-          // Botón gigante del medio
-          Center(
-            child: ElevatedButton(
-              onPressed: _agregarRutina,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: isDarkMode ? Colors.white : Colors.black,
-                foregroundColor: isDarkMode ? Colors.black : Colors.white,
-                padding: const EdgeInsets.all(20.0),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+                      // LISTA DE RUTINAS CON CRUD
+                      if (_isLoading)
+                        const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(24.0),
+                            child: CircularProgressIndicator(),
+                          ),
+                        )
+                      else if (_misRutinas.isEmpty)
+                        Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(24.0),
+                            child: Text(
+                              'Aún no tienes rutinas registradas.',
+                              style: TextStyle(color: isDarkMode ? Colors.white54 : Colors.black54),
+                            ),
+                          ),
+                        )
+                      else
+                        ..._misRutinas.map(
+                          (rutina) => RoutineItem(
+                            routine: rutina,
+                            onEdit: () => _editarRutina(rutina),
+                            onDelete: () => _eliminarRutina(rutina),
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
-              ),
-              child: const Icon(Icons.add, size: 50),
-            ),
-          ),
 
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.all(15.0),
-              child: Text(
-                misRutinas.isEmpty
-                    ? 'Toca + para crear tu primera rutina.'
-                    : 'Tus rutinas guardadas:',
-                style: TextStyle(
-                  fontWeight: FontWeight.w500,
-                  color: isDarkMode ? Colors.white70 : Colors.black87,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 10),
-          ...misRutinas.map((rutina) => RoutineItem(routine: rutina)), ///////////////////////7
-        ],
-      ),
+      // BARRA INFERIOR CON MINI-NAVBAR FLOTANTE DE ENTRENAMIENTO ACTIVO
       bottomNavigationBar: Column(
         mainAxisSize: MainAxisSize.min,
         children: [

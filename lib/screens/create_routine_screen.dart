@@ -4,15 +4,38 @@ import '../models/exercise.dart';
 import '../models/routine.dart';
 
 class CreateRoutineScreen extends StatefulWidget {
-  const CreateRoutineScreen({super.key});
+  final Routine? routineToEdit;
+
+  const CreateRoutineScreen({super.key, this.routineToEdit});
 
   @override
   State<CreateRoutineScreen> createState() => _CreateRoutineScreenState();
 }
 
 class _CreateRoutineScreenState extends State<CreateRoutineScreen> {
-  final TextEditingController _nameController = TextEditingController();
+  late final TextEditingController _nameController;
   final List<Exercise> _selectedExercises = [];
+
+  bool get isEditing => widget.routineToEdit != null;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(
+      text: widget.routineToEdit?.title ?? '',
+    );
+    if (widget.routineToEdit != null) {
+      // Mapeamos los ejercicios existentes buscando coincidencias por ID
+      final catalogExercises = temp_exercises.expand((cat) => cat.exercises).toList();
+      for (final existingEx in widget.routineToEdit!.exercises) {
+        final match = catalogExercises.firstWhere(
+          (catEx) => catEx.id == existingEx.id,
+          orElse: () => existingEx,
+        );
+        _selectedExercises.add(match);
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -22,8 +45,9 @@ class _CreateRoutineScreenState extends State<CreateRoutineScreen> {
 
   void _toggleExercise(Exercise exercise) {
     setState(() {
-      if (_selectedExercises.contains(exercise)) {
-        _selectedExercises.remove(exercise);
+      final exists = _selectedExercises.any((e) => e.id == exercise.id);
+      if (exists) {
+        _selectedExercises.removeWhere((e) => e.id == exercise.id);
       } else {
         _selectedExercises.add(exercise);
       }
@@ -47,13 +71,13 @@ class _CreateRoutineScreenState extends State<CreateRoutineScreen> {
       return;
     }
 
-    final nuevaRutina = Routine(
-      id: DateTime.now().toString(),
+    final rutinaResult = Routine(
+      id: widget.routineToEdit?.id ?? DateTime.now().millisecondsSinceEpoch.toString(),
       title: routineName,
       exercises: List.from(_selectedExercises),
     );
 
-    Navigator.pop(context, nuevaRutina);
+    Navigator.pop(context, rutinaResult);
   }
 
   @override
@@ -62,9 +86,9 @@ class _CreateRoutineScreenState extends State<CreateRoutineScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Nueva Rutina',
-          style: TextStyle(fontWeight: FontWeight.bold),
+        title: Text(
+          isEditing ? 'Editar Rutina' : 'Nueva Rutina',
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
       ),
       body: GestureDetector(
@@ -73,14 +97,14 @@ class _CreateRoutineScreenState extends State<CreateRoutineScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              //Campo para el nombre de la rutina
+              // Campo para el nombre de la rutina
               Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: TextField(
                   controller: _nameController,
                   decoration: const InputDecoration(
                     labelText: 'Nombre de la rutina',
-                    hintText: 'Ej. Día de Hombro',
+                    hintText: 'Ej. Día de Hombro y Abdomen',
                     prefixIcon: Icon(Icons.edit_outlined),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.all(Radius.circular(12)),
@@ -101,7 +125,7 @@ class _CreateRoutineScreenState extends State<CreateRoutineScreen> {
                 ),
               ),
 
-              //Lista por categorías usando temp_exercises
+              // Lista por categorías usando temp_exercises
               Expanded(
                 child: ListView.builder(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -122,7 +146,7 @@ class _CreateRoutineScreenState extends State<CreateRoutineScreen> {
                           ),
                         ),
                         children: category.exercises.map((exercise) {
-                          final isSelected = _selectedExercises.contains(exercise);
+                          final isSelected = _selectedExercises.any((e) => e.id == exercise.id);
 
                           return Card(
                             elevation: 0,
@@ -170,7 +194,7 @@ class _CreateRoutineScreenState extends State<CreateRoutineScreen> {
                 ),
               ),
 
-              //Botón para guardar la rutina 
+              // Botón para guardar o actualizar la rutina
               Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: SizedBox(
@@ -185,9 +209,9 @@ class _CreateRoutineScreenState extends State<CreateRoutineScreen> {
                         borderRadius: BorderRadius.circular(16),
                       ),
                     ),
-                    child: const Text(
-                      'Guardar Rutina',
-                      style: TextStyle(
+                    child: Text(
+                      isEditing ? 'Guardar Cambios' : 'Guardar Rutina',
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),
