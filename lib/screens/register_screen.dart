@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:gymbook/screens/routines_screen.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:gymbook/services/user_service.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -53,9 +54,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
       final userCredential = await FirebaseAuth.instance
           .createUserWithEmailAndPassword(email: email, password: password);
 
-      await userCredential.user?.updateDisplayName(
-        '${_nameController.text.trim()} ${_lastNameController.text.trim()}',
-      );
+      final nombre = '${_nameController.text.trim()} ${_lastNameController.text.trim()}';
+      await userCredential.user?.updateDisplayName(nombre);
+
+      // Guardamos al usuario en Firestore con su token
+      await guardarUsuario(userCredential.user!, nombre);
 
       if (!mounted) return;
       Navigator.of(context).pushAndRemoveUntil(
@@ -99,7 +102,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
         idToken: googleAuth.idToken,
       );
 
-      await FirebaseAuth.instance.signInWithCredential(credential);
+      final userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
+
+      // Guardamos al usuario en Firestore con su token
+      await guardarUsuario(userCredential.user!, userCredential.user!.displayName ?? '');
 
       if (!mounted) return;
       Navigator.of(context).pushAndRemoveUntil(

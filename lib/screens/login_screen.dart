@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:gymbook/screens/routines_screen.dart';
+import 'package:gymbook/services/user_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -38,10 +39,13 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
 
     try {
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
+      final userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
+
+      // Actualizamos al usuario en Firestore
+      await guardarUsuario(userCredential.user!, userCredential.user!.displayName ?? '');
 
       if (!mounted) return;
       Navigator.of(context).pushAndRemoveUntil(
@@ -87,7 +91,10 @@ class _LoginScreenState extends State<LoginScreen> {
         idToken: googleAuth.idToken,
       );
 
-      await FirebaseAuth.instance.signInWithCredential(credential);
+      final userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
+
+      // Guardamos al usuario en Firestore con su token
+      await guardarUsuario(userCredential.user!, userCredential.user!.displayName ?? '');
 
       if (!mounted) return;
       Navigator.of(context).pushAndRemoveUntil(
