@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
-import '../data/dummy_data.dart';
-import '../models/exercise.dart';
-import '../models/routine.dart';
+import 'package:gymbook/data/dummy_data.dart';
+import 'package:gymbook/models/exercise.dart';
+import 'package:gymbook/models/routine.dart';
+
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:gymbook/services/firestore_service.dart';
 
 class CreateRoutineScreen extends StatefulWidget {
-  const CreateRoutineScreen({super.key});
+  final Routine? routineToEdit;
+  const CreateRoutineScreen({super.key, this.routineToEdit});
 
   @override
   State<CreateRoutineScreen> createState() => _CreateRoutineScreenState();
@@ -13,6 +17,15 @@ class CreateRoutineScreen extends StatefulWidget {
 class _CreateRoutineScreenState extends State<CreateRoutineScreen> {
   final TextEditingController _nameController = TextEditingController();
   final List<Exercise> _selectedExercises = [];
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.routineToEdit != null) {
+      _nameController.text = widget.routineToEdit!.title;
+      _selectedExercises.addAll(widget.routineToEdit!.exercises);
+    }
+  }
 
   @override
   void dispose() {
@@ -30,12 +43,13 @@ class _CreateRoutineScreenState extends State<CreateRoutineScreen> {
     });
   }
 
-  void _saveRoutine() {
+  Future<void> _saveRoutine() async {
     final routineName = _nameController.text.trim();
 
     if (routineName.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Por favor escribe un nombre para la rutina.')),
+        const SnackBar(
+            content: Text('Por favor escribe un nombre para la rutina.')),
       );
       return;
     }
@@ -47,25 +61,38 @@ class _CreateRoutineScreenState extends State<CreateRoutineScreen> {
       return;
     }
 
-    final nuevaRutina = Routine(
-      id: DateTime.now().toString(),
-      title: routineName,
-      exercises: List.from(_selectedExercises),
-    );
+    final uid = FirebaseAuth.instance.currentUser?.uid ?? 'guest';
+    final exerciseIds = _selectedExercises.map((e) => e.id).toList();
 
-    Navigator.pop(context, nuevaRutina);
+    if (widget.routineToEdit != null) {
+      await updateRoutine(widget.routineToEdit!.id, routineName, exerciseIds);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Rutina actualizada correctamente.')),
+      );
+    } else {
+      await addRoutine(uid, routineName, exerciseIds);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Rutina guardada en Firebase.')),
+      );
+    }
+
+    Navigator.pop(context);
   }
 
   @override
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final isEditing = widget.routineToEdit != null;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Nueva Rutina',
-          style: TextStyle(fontWeight: FontWeight.bold),
+        title: Text(
+          isEditing ? 'Editar Rutina' : 'Nueva Rutina',
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
+        centerTitle: true,
       ),
       body: GestureDetector(
         onTap: () => FocusScope.of(context).unfocus(),
@@ -185,8 +212,8 @@ class _CreateRoutineScreenState extends State<CreateRoutineScreen> {
                         borderRadius: BorderRadius.circular(16),
                       ),
                     ),
-                    child: const Text(
-                      'Guardar Rutina',
+                    child: Text(
+                      isEditing ? 'Guardar Cambios' : 'Guardar Rutina',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,

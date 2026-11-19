@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import '../models/routine.dart';
 import '../services/active_workout_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../services/firestore_service.dart';
 
 class ActiveWorkoutScreen extends StatefulWidget {
   final Routine routine;
@@ -29,7 +32,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
     super.dispose();
   }
 
-  void _guardarSerie() {
+  Future<void> _guardarSerie() async {
     final peso = _weightController.text.trim();
     final reps = _repsController.text.trim();
 
@@ -40,6 +43,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
       return;
     }
 
+    final uid = FirebaseAuth.instance.currentUser?.uid ?? 'guest';
     final service = ActiveWorkoutService.instance;
     final ejercicioActual = widget.routine.exercises[service.currentExerciseIndex];
     final registro = '$peso kg x $reps reps';
@@ -50,8 +54,19 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
     _repsController.clear();
     FocusScope.of(context).unfocus();
 
+    await saveExerciseProgress(
+      uid: uid,
+      routineId: widget.routine.id,
+      routineTitle: widget.routine.title,
+      exerciseId: ejercicioActual.id,
+      exerciseName: ejercicioActual.name,
+      peso: peso,
+      reps: reps,
+    );
+
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Serie guardada: $registro')),
+      SnackBar(content: Text('Serie guardada en Firebase: $registro')),
     );
   }
 
@@ -189,6 +204,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
   @override
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final uid = FirebaseAuth.instance.currentUser?.uid ?? 'guest';
 
     return ListenableBuilder(
       listenable: ActiveWorkoutService.instance,
@@ -343,31 +359,54 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
                     const SizedBox(height: 14),
 
                     // Tarjeta de peso anterior
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      decoration: BoxDecoration(
-                        color: isDarkMode ? Colors.grey[900] : Colors.grey[100],
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.history,
-                            color: isDarkMode ? Colors.white : Colors.black,
+                    StreamBuilder<DocumentSnapshot>(
+                      stream: getLastExerciseProgressStream(uid, ejercicioActual.id),
+                      builder: (context, snapshot) {
+                        String pesoDesdeFirebase = 'Sin registro previo';
+
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          pesoDesdeFirebase = 'Cargando...';
+                        } else if (snapshot.hasData &&
+                            snapshot.data != null &&
+                            snapshot.data!.exists) {
+                          final data = snapshot.data!.data() as Map<String, dynamic>;
+                          pesoDesdeFirebase = data['registro'] ?? 'Sin registro previo';
+                        }
+
+                        return Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: isDarkMode
+                                ? Colors.grey[900]
+                                : Colors.grey[100],
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Peso anterior: $textoPesoAnterior',
-                            style: TextStyle(
-                              color: isDarkMode ? Colors.white : Colors.black,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                            ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.history,
+                                color: isDarkMode ? Colors.white : Colors.black,
+                              ),
+                              const SizedBox(width: 8),
+                              Flexible(
+                                child: Text(
+                                  'Peso anterior: $pesoDesdeFirebase',
+                                  style: TextStyle(
+                                    color: isDarkMode
+                                        ? Colors.white
+                                        : Colors.black,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
+                        );
+                      },
                     ),
                     const SizedBox(height: 16),
 

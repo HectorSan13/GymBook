@@ -12,6 +12,8 @@ import 'package:gymbook/main.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:gymbook/data/dummy_data.dart';
 import 'package:gymbook/screens/create_routine_screen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:gymbook/services/firestore_service.dart';
 
 class RoutinesScreen extends StatefulWidget {
   const RoutinesScreen({super.key});
@@ -23,49 +25,43 @@ class RoutinesScreen extends StatefulWidget {
 class _RoutinesScreenState extends State<RoutinesScreen> {
   int currentPageIndex = 0;
 
-  final List<Routine> misRutinas = [//Rutinas que apareceran por defecto
-    Routine(
-      id: 'r1',
-      title: 'Día de Pecho y Tríceps',
-      exercises: [
-        ...temp_exercises[0].exercises.take(3),
-        ...temp_exercises[3].exercises.take(2),
-      ],
-    ),
-    Routine(
-      id: 'r2',
-      title: 'Día de Espalda y Bíceps',
-      exercises: [
-        ...temp_exercises[1].exercises.take(3),
-        ...temp_exercises[3].exercises.skip(1).take(2),
-      ],
-    ),
-    Routine(
-      id: 'r3',
-      title: 'Día de Pierna (Cuádriceps)',
-      exercises: temp_exercises[5].exercises.take(4).toList(),
-    ),
-  ];
-
-  Future<void> _agregarRutina() async {
-    final nuevaRutina = await Navigator.push<Routine>(
+  void _agregarRutina() {
+    Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => const CreateRoutineScreen(),
       ),
     );
+  }
 
-    //Cuando se de a guardar rutina, la agregamos y refrescamos la pantalla
-    if (nuevaRutina != null) {
-      setState(() {
-        misRutinas.add(nuevaRutina);
-      });
-    }
+  Future<void> _cargarRutinasDeEjemplo(String uid) async {
+    await addRoutine(
+      uid,
+      'Día de Pecho y Tríceps',
+      [
+        ...temp_exercises[0].exercises.take(3).map((e) => e.id),
+        ...temp_exercises[3].exercises.take(2).map((e) => e.id),
+      ],
+    );
+    await addRoutine(
+      uid,
+      'Día de Espalda y Bíceps',
+      [
+        ...temp_exercises[1].exercises.take(3).map((e) => e.id),
+        ...temp_exercises[3].exercises.skip(1).take(2).map((e) => e.id),
+      ],
+    );
+    await addRoutine(
+      uid,
+      'Día de Pierna (Cuádriceps)',
+      temp_exercises[5].exercises.take(4).map((e) => e.id).toList(),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final uid = FirebaseAuth.instance.currentUser?.uid ?? 'guest';
 
     return Scaffold(
       appBar: AppBar(
@@ -160,7 +156,105 @@ class _RoutinesScreenState extends State<RoutinesScreen> {
               child: const Icon(Icons.add, size: 50),
             ),
           ),
+          StreamBuilder<QuerySnapshot>(
+            stream: getRoutinesStream(uid),
+            builder: (context, snapshot) {
+              if (snapshot.hasError) {
+                return Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Center(
+                    child: Text(
+                        'Error al cargar rutinas: ${snapshot.error}'),
+                  ),
+                );
+              }
 
+              if (snapshot.connectionState ==
+                  ConnectionState.waiting) {
+                return Padding(
+                  padding: const EdgeInsets.all(30.0),
+                  child: Center(
+                    child: CircularProgressIndicator(
+                      color: isDarkMode ? Colors.white : Colors.black,
+                    ),
+                  ),
+                );
+              }
+
+              final docs = snapshot.data?.docs ?? [];
+
+              if (docs.isEmpty) {
+                return Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(15.0),
+                      child: Text(
+                        'Toca + para crear tu primera rutina.',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w500,
+                          color: isDarkMode
+                              ? Colors.white70
+                              : Colors.black87,
+                        ),
+                      ),
+                    ),
+                    OutlinedButton(
+                      onPressed: () => _cargarRutinasDeEjemplo(uid),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor:
+                            isDarkMode ? Colors.white : Colors.black,
+                        side: BorderSide(
+                          color: isDarkMode
+                              ? Colors.grey[700]!
+                              : Colors.grey[400]!,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      child: const Text('Cargar rutinas de ejemplo'),
+                    ),
+                  ],
+                );
+              }
+
+              final rutinas = docs.map((doc) {
+                final data = doc.data() as Map<String, dynamic>;
+                final rawIds =
+                    data['exerciseIds'] as List<dynamic>? ?? [];
+                final ids = rawIds.map((e) => e.toString()).toList();
+
+                return Routine(
+                  id: doc.id,
+                  title: data['title'] ?? 'Sin nombre',
+                  exercises: findExercisesByIds(ids),
+                );
+              }).toList();
+
+              return Column(
+                children: [
+                  Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(15.0),
+                      child: Text(
+                        'Tus rutinas guardadas:',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w500,
+                          color: isDarkMode
+                              ? Colors.white70
+                              : Colors.black87,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  ...rutinas
+                      .map((rutina) => RoutineItem(routine: rutina)),
+                ],
+              );
+            },
+          ),
+          /*
           Center(
             child: Padding(
               padding: const EdgeInsets.all(15.0),
@@ -175,8 +269,10 @@ class _RoutinesScreenState extends State<RoutinesScreen> {
               ),
             ),
           ),
+          
           const SizedBox(height: 10),
           ...misRutinas.map((rutina) => RoutineItem(routine: rutina)), ///////////////////////7
+        */
         ],
       ),
       bottomNavigationBar: Column(
